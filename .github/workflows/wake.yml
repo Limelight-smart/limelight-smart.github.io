@@ -1,0 +1,60 @@
+# 서버 깨우기 — 원본은 이 파일(10/18 비공개 저장소에서 옮김: 공개 저장소는 Actions 무료). 비밀값 없음, 웹 앱 주소만
+# 금3(15시)·금6(18시)·토10(10시)·토2(14시) 마클 시작 10분 전부터 시작 15분 뒤까지 1분마다 선생님앱_API ?a=warm 호출
+# → 조교 앱 로그인·출석 저장 때 서버가 잠들어 있어 느린 문제를 줄인다. 시트 쓰기·문자 없음.
+# GitHub 예약 실행은 몇 분 늦게 시작될 수 있어서, 늦게 시작해도 '시작 15분 뒤'까지는 계속 돈다.
+# 지시서 017: 수업 시간대(평일 13~22시, 토 9~18시)에는 15분마다 한 번씩 선생님앱_API와 리모컨(엔진 웹 앱)을 깨운다(한 번 = 1분 사용).
+name: 출석 시간 깨우기
+
+on:
+  schedule:
+    - cron: '50 5,8 * * 5'   # 금 14:50 · 17:50 (한국 시간) = UTC 05:50 · 08:50
+    - cron: '50 0,4 * * 6'   # 토 09:50 · 13:50 (한국 시간) = UTC 00:50 · 04:50
+    - cron: '2,17,32,47 4-12 * * 1-5'   # 017 평일 13:02~21:47 (한국) 15분마다
+    - cron: '2,17,32,47 0-8 * * 6'      # 017 토 09:02~17:47 (한국) 15분마다
+  workflow_dispatch: {}      # 시험용 수동 실행 (3분만 돌고 끝)
+
+jobs:
+  wake:
+    if: github.event.schedule != '2,17,32,47 4-12 * * 1-5' && github.event.schedule != '2,17,32,47 0-8 * * 6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: 1분마다 깨우기
+        env:
+          API: https://script.google.com/macros/s/AKfycbxW5BKDfh3tuWTYDIaZILVPCZwRA4Vbsk0i09XN6-eEpJgauQjHp_hn5AP7x_xM2_Ra/exec
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          now=$(date +%s)
+          if [ "$MANUAL" = "true" ]; then
+            end=$((now + 180))
+          else
+            # 15분 뒤가 속한 정시(=마클 시작) + 10분 까지
+            start=$(( (now + 900) / 3600 * 3600 ))
+            end=$((start + 900))   # 시작 15분 뒤까지 (킴쌤 10/17: 10:15·14:15)
+          fi
+          echo "끝나는 시각(한국): $(TZ=Asia/Seoul date -d @$end '+%H:%M')"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            t0=$(date +%s%3N)
+            body=$(curl -s -L --max-time 50 "$API?a=warm" || echo '실패')
+            t1=$(date +%s%3N)
+            line="$(TZ=Asia/Seoul date '+%H:%M:%S') $((t1 - t0))ms $(echo "$body" | head -c 150)"
+            echo "$line"
+            echo "::notice title=깨우기::$line"
+            sleep 60
+          done
+
+  # 017: 수업 시간대 15분마다 한 번 (선생님·조교 앱 = 선생님앱_API, 원장 리모컨 = 엔진 웹 앱). 시트 쓰기·문자 없음
+  ping:
+    if: github.event.schedule == '2,17,32,47 4-12 * * 1-5' || github.event.schedule == '2,17,32,47 0-8 * * 6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: 한 번 깨우기
+        env:
+          API: https://script.google.com/macros/s/AKfycbxW5BKDfh3tuWTYDIaZILVPCZwRA4Vbsk0i09XN6-eEpJgauQjHp_hn5AP7x_xM2_Ra/exec
+          DR: https://script.google.com/macros/s/AKfycbz4Cmsai2jiWPRMHShTQnkggvnHafFPexefpsuEV98GcUepIm32Wg90m61KH91fS4tn-w/exec
+        run: |
+          t() { curl -s -L -o /dev/null --max-time 50 -w '%{time_total}s' "$1" || echo '실패'; }
+          line="$(TZ=Asia/Seoul date '+%H:%M:%S') 선생님앱 $(t "$API?a=warm") · 리모컨 $(t "$DR")"
+          echo "$line"
+          echo "::notice title=깨우기::$line"
