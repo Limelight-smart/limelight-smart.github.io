@@ -71,20 +71,42 @@ const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const post=async b=>{const r=await fetch(A,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(b)});return r.json()};
 const LV={ok:"정상",warn:"확인",bad:"문제"};let ARG={};
 const login=()=>{$("main").hidden=true;$("f").hidden=false};
-async function load(){
-  $("r").disabled=true;$("now").textContent="불러오는 중…";
-  let o;try{o=await post({a:"status",token:g(T)})}catch(e){$("now").textContent="연결 실패 — 새로고침을 눌러 주세요";$("r").disabled=false;return}
-  $("r").disabled=false;
-  if(!o.ok){if(o.error==="auth"){d(T);login();return}$("now").textContent="오류: "+o.error;return}
-  $("f").hidden=true;$("main").hidden=false;$("now").textContent=o.now+" 기준";
-  const c={ok:0,warn:0,bad:0};o.cards.forEach(x=>c[x.lv]=(c[x.lv]||0)+1);
+// 017: 지난번 화면을 폰에 저장(dr_view, 나가기 때 지움) → 다음에 열면 바로 보이고, 카드 묶음 4개(a·b·c·d)를 동시에 받아 온 것부터 바꿔 그림
+// 버튼은 저장하지 않는다(배치안 확인 창 목록은 늘 지금 것이어야 함) → d가 오면 그림
+const V="dr_view",PARTS=["a","b","c","d"],ORD=["engine","before","autosync","matholic","weekly","triggers","mk_오늘","mk_내일","formula","mk","plan","naesin"];
+let view={},busy=0;
+function draw(){
+  const all=[];PARTS.forEach(k=>(view[k]&&view[k].cards||[]).forEach(x=>all.push(x)));
+  const c={ok:0,warn:0,bad:0};all.forEach(x=>c[x.lv]=(c[x.lv]||0)+1);
   $("sum").innerHTML=["bad","warn","ok"].map(k=>"<div><b>"+c[k]+"</b>"+LV[k]+"</div>").join("");
-  const ord={bad:0,warn:1,ok:2};
-  $("cards").innerHTML=o.cards.map((x,i)=>[x,i]).sort((a,b)=>(ord[a[0].lv]-ord[b[0].lv])||(a[1]-b[1])).map(([x])=>
-    '<div class="card '+esc(x.lv)+'"><h3>'+esc(x.title)+"<i>"+LV[x.lv]+"</i></h3><ul>"+x.lines.map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul></div>").join("");
+  const ord={bad:0,warn:1,ok:2},ix=x=>{const i=ORD.indexOf(x.id);return i<0?99:i};
+  $("cards").innerHTML=all.sort((a,b)=>(ord[a.lv]-ord[b.lv])||(ix(a)-ix(b))).map(x=>
+    '<div class="card '+esc(x.lv)+'"><h3>'+esc(x.title)+"<i>"+LV[x.lv]+"</i></h3><ul>"+x.lines.map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul></div>").join("")+(PARTS.some(k=>!view[k])?'<div class="card"><ul><li>불러오는 중…</li></ul></div>':"");
+  const log=view.a&&view.a.log;
+  $("log").innerHTML=log?(log.length?log.map(x=>"<div>"+(x.ok?"✔ ":"✖ ")+esc(x.at)+" · "+esc(x.who)+" · "+esc(x.title)+" ("+x.sec+"초)<br>"+esc(String(x.res).slice(0,160))+"</div>").join(""):"<div>아직 없음</div>"):"<div>불러오는 중…</div>";
+}
+function drawBtns(o){
   ARG={};o.buttons.forEach(b=>ARG[b.id]=b.arg);
   $("btns").innerHTML=o.buttons.map(b=>'<div class="btn"><button data-id="'+esc(b.id)+'" data-c="'+esc(b.confirm)+'">'+esc(b.title)+"</button><p>"+esc(b.desc)+'</p><div class="res" hidden></div></div>').join("");
-  $("log").innerHTML=(o.log||[]).length?o.log.map(x=>"<div>"+(x.ok?"✔ ":"✖ ")+esc(x.at)+" · "+esc(x.who)+" · "+esc(x.title)+" ("+x.sec+"초)<br>"+esc(String(x.res).slice(0,160))+"</div>").join(""):"<div>아직 없음</div>";
+}
+function show(){$("f").hidden=true;$("main").hidden=false}
+function load(fresh){
+  if(busy)return;busy=PARTS.length;$("r").disabled=true;
+  let saved=null;try{saved=JSON.parse(g(V)||"null")}catch(e){}
+  if(saved&&!view.a){view=saved;show();draw();$("now").textContent=(saved.a&&saved.a.at||"")+" 저장된 화면 · 새로 받는 중…"}
+  else $("now").textContent="새로 받는 중…";
+  if(!view.d)$("btns").innerHTML='<div class="btn"><p>불러오는 중…</p></div>';
+  const got={},fail=[];let authFail=false;
+  PARTS.forEach(k=>post({a:"status",part:k,fresh:fresh?"1":"0",token:g(T)}).then(o=>{
+    if(!o.ok){if(o.error==="auth")authFail=true;else fail.push(k);return}
+    got[k]=o;view[k]={cards:o.cards,at:o.at,log:o.log};show();draw();if(k==="d")drawBtns(o);
+  }).catch(()=>fail.push(k)).finally(()=>{
+    if(--busy)return;$("r").disabled=false;
+    if(authFail){view={};d(V);d(T);login();return}
+    const at=got.a?got.a.now:"";s(V,JSON.stringify(view));
+    $("now").textContent=fail.length?"일부 연결 실패 — 새로고침을 눌러 주세요":(at+" 기준");
+    if(!view.a&&fail.length)$("now").textContent="연결 실패 — 새로고침을 눌러 주세요";
+  }));
 }
 $("btns").addEventListener("click",async ev=>{
   const b=ev.target.closest("button");if(!b)return;
@@ -93,7 +115,7 @@ $("btns").addEventListener("click",async ev=>{
   if(b.dataset.c&&!confirm(b.dataset.c))return;
   const out=b.parentNode.querySelector(".res");b.disabled=true;out.hidden=false;out.textContent="실행 중… (1분 넘게 걸릴 수 있어요)";
   try{const o=await post({a:"run",token:g(T),id:b.dataset.id,arg:arg});
-    if(o.error==="auth"){d(T);login();return}
+    if(o.error==="auth"){d(T);d(V);view={};login();return}
     out.textContent=(o.ok?"✔ 완료":"✖ 실패")+(o.sec!=null?" ("+o.sec+"초)":"")+"\n"+(o.res||o.error||"")}
   catch(e){out.textContent="연결 실패 — 결과는 새로고침 후 '버튼 누른 기록'에서 확인"}
   b.disabled=false;
@@ -101,13 +123,13 @@ $("btns").addEventListener("click",async ev=>{
 $("f").addEventListener("submit",async ev=>{
   ev.preventDefault();$("b").disabled=true;$("e").textContent="";
   try{const o=await post({a:"login",name:$("n").value.trim(),pin:$("p").value.trim()});
-    if(o.ok){s(T,o.token);$("p").value="";await load()}else $("e").textContent=o.error}
+    if(o.ok){s(T,o.token);$("p").value="";view={};load(true)}else $("e").textContent=o.error}
   catch(e){$("e").textContent="연결 실패"}
   $("b").disabled=false;
 });
-$("r").onclick=load;
-$("o").onclick=()=>{d(T);login()};
-if(g(T))load();else login();
+$("r").onclick=()=>load(true);
+$("o").onclick=()=>{d(T);d(V);view={};login()};
+if(g(T))load(false);else login();
 })();
 </script>
 </body>
