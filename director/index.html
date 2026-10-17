@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2eaf64">
+<title>라임라잇 리모컨</title>
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="apple-touch-icon" href="../assets/icon-192.png">
+<!-- 원장 리모컨 화면 (지시서 011). 원본: 비공개 저장소 web/director/index.html → 공개 저장소 director/ 로 복사.
+     학생 정보는 이 파일에 없다. 로그인(⚙선생님 '원장') 뒤 엔진 웹 앱이 보내 주는 것만 그린다. -->
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{background:#f5f7f6;color:#1e2a38;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:16px 16px 40px}
+.box{max-width:380px;margin:40px auto;background:#fff;border:1px solid #e4e8e5;border-radius:18px;padding:28px 22px}
+.logo{display:block;height:56px;margin:0 auto 12px}
+h1{margin:0 0 20px;text-align:center;font-size:24px}
+label{display:block;font-weight:700;margin:14px 0 6px}
+input{display:block;width:100%;height:48px;border:1px solid #d8ded9;border-radius:12px;padding:0 14px;font-size:17px;background:#fff;color:inherit}
+.big{width:100%;height:52px;margin-top:22px;border:0;border-radius:12px;background:#2eaf64;color:#fff;font-size:18px;font-weight:800}
+button:disabled{opacity:.6}
+.err{margin-top:12px;color:#c62828;font-weight:700;text-align:center;min-height:1em;white-space:pre-wrap}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.top h2{margin:0;font-size:20px;flex:1}
+.top small{color:#6b7480;font-weight:400;font-size:13px;display:block}
+.sm{height:36px;padding:0 12px;border:1px solid #d8ded9;border-radius:10px;background:#fff;font-size:14px;font-weight:700;color:inherit}
+.sum{display:flex;gap:8px;margin-bottom:12px}
+.sum div{flex:1;background:#fff;border:1px solid #e4e8e5;border-radius:12px;padding:8px;text-align:center;font-size:13px;color:#6b7480}
+.sum b{display:block;font-size:22px;color:#1e2a38}
+.card{background:#fff;border:1px solid #e4e8e5;border-left:6px solid #2eaf64;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.card.warn{border-left-color:#e8a317}.card.bad{border-left-color:#d93636}
+.card h3{margin:0 0 4px;font-size:16px;display:flex;gap:6px;align-items:center}
+.card h3 i{font-style:normal;font-size:12px;font-weight:800;padding:1px 7px;border-radius:8px;background:#e6f5ec;color:#1d7a45}
+.card.warn h3 i{background:#fff4dc;color:#94650a}.card.bad h3 i{background:#fde8e8;color:#a32020}
+.card ul{margin:0;padding-left:18px;color:#3b4654;word-break:break-all}
+.sec{margin:22px 0 8px;font-size:17px}
+.btn{background:#fff;border:1px solid #e4e8e5;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.btn button{height:42px;padding:0 16px;border:0;border-radius:10px;background:#2eaf64;color:#fff;font-size:15px;font-weight:800}
+.btn p{margin:6px 0 0;color:#6b7480;font-size:13px}
+.res{margin-top:8px;background:#f2f5f3;border-radius:8px;padding:8px 10px;font-size:13px;white-space:pre-wrap;word-break:break-all}
+.log{font-size:13px;color:#3b4654;background:#fff;border:1px solid #e4e8e5;border-radius:12px;padding:10px 14px}
+.log div{padding:4px 0;border-bottom:1px solid #eef1ef}.log div:last-child{border:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<form class="box" id="f" hidden>
+  <img class="logo" src="../assets/logo-dark.png" alt="라임라잇">
+  <h1>원장 리모컨</h1>
+  <label for="n">성함</label><input id="n" autocomplete="username" placeholder="예) 김라임">
+  <label for="p">PIN</label><input id="p" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password">
+  <button class="big" id="b" type="submit">들어가기</button>
+  <div class="err" id="e"></div>
+</form>
+<div class="wrap" id="main" hidden>
+  <div class="top"><h2>리모컨<small id="now"></small></h2><button class="sm" id="r">새로고침</button><button class="sm" id="o">나가기</button></div>
+  <div class="sum" id="sum"></div>
+  <div id="cards"></div>
+  <h3 class="sec">버튼</h3>
+  <div id="btns"></div>
+  <h3 class="sec">버튼 누른 기록</h3>
+  <div class="log" id="log"></div>
+</div>
+<script>
+(()=>{
+const A="https://script.google.com/macros/s/AKfycbz4Cmsai2jiWPRMHShTQnkggvnHafFPexefpsuEV98GcUepIm32Wg90m61KH91fS4tn-w/exec",T="dr_token",L=localStorage,$=i=>document.getElementById(i);
+const g=k=>{try{return L.getItem(k)}catch(e){return null}},s=(k,v)=>{try{L.setItem(k,v)}catch(e){}},d=k=>{try{L.removeItem(k)}catch(e){}};
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const post=async b=>{const r=await fetch(A,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(b)});return r.json()};
+const LV={ok:"정상",warn:"확인",bad:"문제"};
+const login=()=>{$("main").hidden=true;$("f").hidden=false};
+async function load(){
+  $("r").disabled=true;$("now").textContent="불러오는 중…";
+  let o;try{o=await post({a:"status",token:g(T)})}catch(e){$("now").textContent="연결 실패 — 새로고침을 눌러 주세요";$("r").disabled=false;return}
+  $("r").disabled=false;
+  if(!o.ok){if(o.error==="auth"){d(T);login();return}$("now").textContent="오류: "+o.error;return}
+  $("f").hidden=true;$("main").hidden=false;$("now").textContent=o.now+" 기준";
+  const c={ok:0,warn:0,bad:0};o.cards.forEach(x=>c[x.lv]=(c[x.lv]||0)+1);
+  $("sum").innerHTML=["bad","warn","ok"].map(k=>"<div><b>"+c[k]+"</b>"+LV[k]+"</div>").join("");
+  const ord={bad:0,warn:1,ok:2};
+  $("cards").innerHTML=o.cards.map((x,i)=>[x,i]).sort((a,b)=>(ord[a[0].lv]-ord[b[0].lv])||(a[1]-b[1])).map(([x])=>
+    '<div class="card '+esc(x.lv)+'"><h3>'+esc(x.title)+"<i>"+LV[x.lv]+"</i></h3><ul>"+x.lines.map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul></div>").join("");
+  $("btns").innerHTML=o.buttons.map(b=>'<div class="btn"><button data-id="'+esc(b.id)+'" data-c="'+esc(b.confirm)+'">'+esc(b.title)+"</button><p>"+esc(b.desc)+'</p><div class="res" hidden></div></div>').join("");
+  $("log").innerHTML=(o.log||[]).length?o.log.map(x=>"<div>"+(x.ok?"✔ ":"✖ ")+esc(x.at)+" · "+esc(x.who)+" · "+esc(x.title)+" ("+x.sec+"초)<br>"+esc(String(x.res).slice(0,160))+"</div>").join(""):"<div>아직 없음</div>";
+}
+$("btns").addEventListener("click",async ev=>{
+  const b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.c&&!confirm(b.dataset.c))return;
+  const out=b.parentNode.querySelector(".res");b.disabled=true;out.hidden=false;out.textContent="실행 중… (1분 넘게 걸릴 수 있어요)";
+  try{const o=await post({a:"run",token:g(T),id:b.dataset.id});
+    if(o.error==="auth"){d(T);login();return}
+    out.textContent=(o.ok?"✔ 완료":"✖ 실패")+(o.sec!=null?" ("+o.sec+"초)":"")+"\n"+(o.res||o.error||"")}
+  catch(e){out.textContent="연결 실패 — 결과는 새로고침 후 '버튼 누른 기록'에서 확인"}
+  b.disabled=false;
+});
+$("f").addEventListener("submit",async ev=>{
+  ev.preventDefault();$("b").disabled=true;$("e").textContent="";
+  try{const o=await post({a:"login",name:$("n").value.trim(),pin:$("p").value.trim()});
+    if(o.ok){s(T,o.token);$("p").value="";await load()}else $("e").textContent=o.error}
+  catch(e){$("e").textContent="연결 실패"}
+  $("b").disabled=false;
+});
+$("r").onclick=load;
+$("o").onclick=()=>{d(T);login()};
+if(g(T))load();else login();
+})();
+</script>
+</body>
+</html>
