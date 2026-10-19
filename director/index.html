@@ -73,7 +73,7 @@ const LV={ok:"정상",warn:"확인",bad:"문제"};let ARG={};
 const login=()=>{$("main").hidden=true;$("f").hidden=false};
 // 017: 지난번 화면을 폰에 저장(dr_view, 나가기 때 지움) → 다음에 열면 바로 보이고, 카드 묶음 4개(a·b·c·d)를 동시에 받아 온 것부터 바꿔 그림
 // 버튼은 저장하지 않는다(배치안 확인 창 목록은 늘 지금 것이어야 함) → d가 오면 그림
-const V="dr_view",PARTS=["a","b","c","d"],ORD=["engine","before","autosync","matholic","weekly","triggers","mk_오늘","mk_내일","formula","mk","plan","naesin","achv"];
+const V="dr_view",PARTS=["a","b","c","d"],ORD=["engine","before","autosync","matholic","weekly","noblock","triggers","mk_오늘","mk_내일","formula","mk","plan","naesin","achv"];
 let view={},busy=0;
 function draw(){
   const all=[];PARTS.forEach(k=>(view[k]&&view[k].cards||[]).forEach(x=>all.push(x)));
