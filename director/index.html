@@ -73,7 +73,7 @@ const LV={ok:"정상",warn:"확인",bad:"문제"};let ARG={};
 const login=()=>{$("main").hidden=true;$("f").hidden=false};
 // 017: 지난번 화면을 폰에 저장(dr_view, 나가기 때 지움) → 다음에 열면 바로 보이고, 카드 묶음 4개(a·b·c·d)를 동시에 받아 온 것부터 바꿔 그림
 // 버튼은 저장하지 않는다(배치안 확인 창 목록은 늘 지금 것이어야 함) → d가 오면 그림
-const V="dr_view",PARTS=["a","b","c","d"],ORD=["naealert","engine","before","autosync","matholic","weekly","noblock","triggers","mk_오늘","mk_내일","formula","mk","plan","naemode","naesin","achv","pwreq"];
+const V="dr_view",PARTS=["a","b","c","d"],ORD=["naealert","engine","before","autosync","matholic","weekly","noblock","triggers","mk_오늘","mk_내일","formula","mk","plan","naemode","naesin","achv","pwreq","initpw"];
 let view={},busy=0;
 function draw(){
   const all=[];PARTS.forEach(k=>(view[k]&&view[k].cards||[]).forEach(x=>all.push(x)));
@@ -87,7 +87,7 @@ function draw(){
 }
 function drawBtns(o){
   ARG={};o.buttons.forEach(b=>ARG[b.id]=b.arg);
-  $("btns").innerHTML=o.buttons.map(b=>'<div class="btn"><button data-id="'+esc(b.id)+'" data-c="'+esc(b.confirm)+'">'+esc(b.title)+"</button><p>"+esc(b.desc)+'</p><div class="res" hidden></div></div>').join("");
+  $("btns").innerHTML=o.buttons.map(b=>'<div class="btn"><button data-id="'+esc(b.id)+'" data-c="'+esc(b.confirm)+'" data-c2="'+esc(b.confirm2||"")+'">'+esc(b.title)+"</button><p>"+esc(b.desc)+'</p><div class="res" hidden></div></div>').join("");
 }
 function show(){$("f").hidden=true;$("main").hidden=false}
 function load(fresh){
@@ -113,6 +113,7 @@ $("btns").addEventListener("click",async ev=>{
   const arg=ARG[b.dataset.id];
   if(Array.isArray(arg)&&!arg.length){alert(b.dataset.c||"할 것이 없습니다");return}
   if(b.dataset.c&&!confirm(b.dataset.c))return;
+  if(b.dataset.c2&&!confirm(b.dataset.c2))return; // 두 번째 확인(초기 비밀번호 전체 발송)
   const out=b.parentNode.querySelector(".res");b.disabled=true;out.hidden=false;out.textContent="실행 중… (1분 넘게 걸릴 수 있어요)";
   try{const o=await post({a:"run",token:g(T),id:b.dataset.id,arg:arg});
     if(o.error==="auth"){d(T);d(V);view={};login();return}
