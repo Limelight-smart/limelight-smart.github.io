@@ -6,8 +6,8 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#2eaf64">
 <title>라임라잇 리모컨</title>
-<link rel="icon" href="../assets/icon-192.png">
-<link rel="apple-touch-icon" href="../assets/icon-192.png">
+<link rel="icon" href="../assets/icon-192.png?v=1022">
+<link rel="apple-touch-icon" href="../assets/icon-192.png?v=1022">
 <!-- 원장 리모컨 화면 (지시서 011). 원본: 비공개 저장소 web/director/index.html → 공개 저장소 director/ 로 복사.
      학생 정보는 이 파일에 없다. 로그인(⚙선생님 '원장') 뒤 엔진 웹 앱이 보내 주는 것만 그린다. -->
 <style>
@@ -15,7 +15,7 @@
 body{background:#f5f7f6;color:#1e2a38;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5}
 .wrap{max-width:720px;margin:0 auto;padding:16px 16px 40px}
 .box{max-width:380px;margin:40px auto;background:#fff;border:1px solid #e4e8e5;border-radius:18px;padding:28px 22px}
-.logo{display:block;height:56px;margin:0 auto 12px}
+.logo{display:block;height:84px;width:auto;margin:0 auto 12px}
 h1{margin:0 0 20px;text-align:center;font-size:24px}
 label{display:block;font-weight:700;margin:14px 0 6px}
 input{display:block;width:100%;height:48px;border:1px solid #d8ded9;border-radius:12px;padding:0 14px;font-size:17px;background:#fff;color:inherit}
@@ -48,7 +48,7 @@ button:disabled{opacity:.6}
 </head>
 <body>
 <form class="box" id="f" hidden>
-  <img class="logo" src="../assets/logo-dark.png" alt="라임라잇">
+  <img class="logo" src="../assets/logo.png?v=1022" alt="라임라잇">
   <h1>원장 리모컨</h1>
   <label for="n">성함</label><input id="n" autocomplete="username" placeholder="예) 김라임">
   <label for="p">비밀번호 6자리 <small style="font-weight:400;color:#6b7480">(선생님 앱과 같음)</small></label><input id="p" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password">
@@ -74,7 +74,7 @@ const LV={ok:"정상",warn:"확인",bad:"문제"};let ARG={};
 const login=()=>{$("main").hidden=true;$("f").hidden=false};
 // 017: 지난번 화면을 폰에 저장(dr_view, 나가기 때 지움) → 다음에 열면 바로 보이고, 카드 묶음 4개(a·b·c·d)를 동시에 받아 온 것부터 바꿔 그림
 // 버튼은 저장하지 않는다(배치안 확인 창 목록은 늘 지금 것이어야 함) → d가 오면 그림
-const V="dr_view",PARTS=["a","b","c","d"],ORD=["naealert","engine","before","autosync","matholic","weekly","mhdiff","noblock","triggers","mk_오늘","mk_내일","formula","mk","plan","naemode","naesin","achv","goal","preq","pwreq","initpw"];
+const V="dr_view",PARTS=["a","b","c","d"],ORD=["naealert","engine","before","autosync","matholic","weekly","mhdiff","noblock","triggers","mk_오늘","mk_내일","formula","mk","plan","naemode","naesin","achv","goal","treq","preq","pwreq","initpw"];
 let view={},busy=0;
 function draw(){
   const all=[];PARTS.forEach(k=>(view[k]&&view[k].cards||[]).forEach(x=>all.push(x)));
