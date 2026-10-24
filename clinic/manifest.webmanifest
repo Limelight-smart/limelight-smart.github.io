@@ -5,7 +5,7 @@
  "start_url": "./index.html",
  "scope": "./",
  "display": "standalone",
- "theme_color": "#2eaf64",
+ "theme_color": "#1f2a44",
  "lang": "ko",
  "icons": [
   {
