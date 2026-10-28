@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#12251b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>라임라잇 출석</title>
+<link rel="icon" href="../assets/icon-192.png?v=1022">
+<link rel="apple-touch-icon" href="../assets/icon-192.png?v=1022">
+<!-- 출석 키패드(지시서 045 1차). 원본: 비공개 저장소 web/kiosk/ → 공개 저장소 kiosk/ 로 그대로 복사(빌드 없음).
+     학생 정보는 이 파일에 없다. 기기 열쇠로 빠른 서버(kiosk)에서 받은 명부만 이 기기 안에 둔다. 예시 = 김라임. -->
+<style>
+:root{--bg:#12251b;--panel:#183024;--key:#f4f7f5;--keyt:#14261c;--keyp:#d9e6dd;--g:#2eaf64;--g2:#8fe3b0;--o:#f0a43a;--r:#e25b4f;--t:#eef5f0;--m:#9db5a6;--line:#2a4636}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t);font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;touch-action:manipulation}
+.app{display:grid;grid-template-columns:1fr minmax(360px,44vw);height:100vh;height:100dvh;gap:0}
+.left{display:flex;flex-direction:column;padding:4vh 4vw;position:relative;min-width:0}
+.brand{font-size:clamp(16px,2.2vh,22px);color:var(--m);font-weight:700;letter-spacing:.02em;text-align:center}
+.clock{font-size:clamp(64px,15vh,170px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1;text-align:center;margin-top:3vh}
+.date{font-size:clamp(18px,3vh,30px);color:var(--m);text-align:center;margin-top:1.2vh;font-weight:600}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.hint{font-size:clamp(22px,3.8vh,40px);color:var(--m);text-align:center;font-weight:700;line-height:1.4}
+.dots{display:flex;gap:2.4vh;justify-content:center;margin-top:3vh}
+.dots i{width:4.2vh;height:4.2vh;border-radius:50%;border:.5vh solid var(--g2);display:block}
+.dots i.on{background:var(--g2)}
+.res{text-align:center;width:100%}
+.res .nm{font-size:clamp(48px,10vh,120px);font-weight:800;line-height:1.1;word-break:keep-all}
+.res .kind{display:inline-block;margin-top:2.4vh;font-size:clamp(34px,7vh,80px);font-weight:800;padding:.6vh 4vh;border-radius:999px;background:var(--g);color:#fff}
+.res .kind.out{background:var(--o)}
+.res .tm{font-size:clamp(24px,4.5vh,48px);color:var(--m);font-weight:700;margin-top:1.6vh;font-variant-numeric:tabular-nums}
+.res .cls{font-size:clamp(18px,3vh,30px);color:var(--m);margin-top:1vh}
+.res.warn .nm{font-size:clamp(34px,7vh,80px)}
+.res.warn .msg{font-size:clamp(22px,4vh,40px);color:var(--o);font-weight:700;margin-top:2vh}
+.cancel{margin-top:3vh;height:8vh;min-height:56px;padding:0 5vh;border-radius:2vh;border:.4vh solid var(--m);background:transparent;color:var(--t);font-size:clamp(20px,3.4vh,34px);font-weight:800}
+.pick{display:flex;flex-wrap:wrap;gap:2vh;justify-content:center;margin-top:3vh}
+.pick button{min-width:26vh;height:12vh;min-height:72px;border-radius:2.4vh;border:0;background:var(--key);color:var(--keyt);font-size:clamp(28px,5.4vh,56px);font-weight:800;padding:0 3vh}
+.pick button small{display:block;font-size:.45em;color:#5b6d62;font-weight:700}
+.pick .back{background:transparent;border:.4vh solid var(--m);color:var(--t);font-size:clamp(20px,3.4vh,34px)}
+.ttl{font-size:clamp(26px,4.6vh,46px);font-weight:800;text-align:center}
+.right{background:var(--panel);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:1.8vh;padding:3vh 3vh calc(3vh + 30px)}
+.right button{border:0;border-radius:2.6vh;background:var(--key);color:var(--keyt);font-size:clamp(40px,9vh,96px);font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 .6vh 0 #b9c9be;transition:transform .05s}
+.right button:active,.right button.pr{transform:translateY(.5vh);box-shadow:0 .1vh 0 #b9c9be;background:var(--keyp)}
+.right button.fn{background:#2d4a3a;color:var(--t);font-size:clamp(22px,4.4vh,44px);box-shadow:0 .6vh 0 #0e1d15}
+.bar{position:fixed;left:0;right:0;bottom:0;height:30px;display:flex;gap:16px;align-items:center;justify-content:flex-end;padding:0 16px;font-size:13px;color:var(--m);pointer-events:none}
+.bar b{color:var(--t);font-weight:700}
+.bar .dot{width:10px;height:10px;border-radius:50%;background:var(--m);display:inline-block;margin-right:6px;vertical-align:-1px}
+.bar .dot.ok{background:var(--g)}.bar .dot.bad{background:var(--r)}
+.test{position:fixed;left:0;top:0;padding:6px 14px;background:var(--r);color:#fff;font-weight:800;font-size:14px;border-bottom-right-radius:12px;display:none}
+body.is-test .test{display:block}
+.set{position:fixed;inset:0;background:rgba(5,12,8,.86);display:none;align-items:center;justify-content:center;z-index:9}
+.set.on{display:flex}
+.set .box{background:#fff;color:#1e2a38;border-radius:18px;padding:26px 24px;width:min(440px,92vw);-webkit-user-select:text;user-select:text}
+.set h2{margin:0 0 16px;font-size:24px;text-align:center}
+.set label{display:block;font-weight:700;margin:12px 0 6px;font-size:15px}
+.set input[type=text],.set input[type=password]{width:100%;height:46px;border:1px solid #d8ded9;border-radius:12px;padding:0 12px;font-size:17px}
+.set .devs{display:flex;gap:8px}.set .devs button{flex:1;height:46px;border-radius:12px;border:1px solid #d8ded9;background:#fff;font-size:18px;font-weight:800}
+.set .devs button.on{background:#1e2a38;color:#fff;border-color:#1e2a38}
+.set .row{display:flex;gap:8px;align-items:center;margin-top:14px;font-weight:700}
+.set .go{width:100%;height:50px;margin-top:20px;border:0;border-radius:12px;background:var(--g);color:#fff;font-size:18px;font-weight:800}
+.set .err{color:#c62828;font-weight:700;text-align:center;min-height:1.2em;margin-top:10px;font-size:14px}
+.set .info{font-size:13px;color:#6b7480;text-align:center;margin-top:8px}
+@media (orientation:portrait){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.right{min-height:52vh}.clock{font-size:12vh}.left{padding:3vh 16px}}
+</style>
+</head>
+<body>
+<div class="test">시험 모드 · 예시 명부</div>
+<div class="app">
+  <div class="left">
+    <div class="brand" id="brand">라임라잇수학 스마트관</div>
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="date"></div>
+    <div class="stage" id="stage"></div>
+  </div>
+  <div class="right" id="pad"></div>
+</div>
+<div class="bar"><span id="bDev"></span><span id="bRos"></span><span>보낼 줄 <b id="bOut">0</b></span><span><i class="dot" id="bDot"></i><span id="bNet">연결 확인 중</span></span></div>
+<div class="set" id="set"><div class="box">
+  <h2>키패드 설정</h2>
+  <label>기기 번호</label><div class="devs" id="sDev"></div>
+  <label>기기 열쇠</label><input type="password" id="sKey" autocomplete="off" placeholder="관제탑에서 받은 열쇠">
+  <div class="row"><input type="checkbox" id="sTest"><label for="sTest" style="margin:0">시험 모드(예시 명부 · 시험 탭에만 기록)</label></div>
+  <label>서버 주소</label><input type="text" id="sApi" autocomplete="off">
+  <button class="go" id="sGo">저장하고 시작</button>
+  <div class="err" id="sErr"></div>
+  <div class="info">설정 다시 열기: 시계를 3초 누르기</div>
+</div></div>
+<script src="core.js?v=1029a"></script>
+<script>
+(function () {
+  'use strict';
+  var FAST = 'https://limelight-fast-hrsvpdbbmq-du.a.run.app';
+  var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var Q = new URLSearchParams(location.search);
+  var cfg = (function () { try { return JSON.parse(LS.get('kiosk_cfg') || 'null'); } catch (e) { return null; } })() || {};
+  if (Q.get('dev')) cfg.dev = Q.get('dev');
+  if (Q.get('test') === '1') cfg.test = true;
+  if (Q.get('api')) cfg.api = Q.get('api');
+  var $ = function (id) { return document.getElementById(id); };
+  var K = null, buf = '', view = { kind: 'idle' }, resetT = null, shift = 0; // shift = 시험 모드 시계 옮김(시뮬레이션만)
+  var now = function () { return Date.now() + shift; };
+  // 시뮬레이션이 판정 ms를 읽는 곳
+  window.__kiosk = { log: [], setClock: function (ms) { if (cfg.test) shift = ms - Date.now(); }, core: function () { return K; } };
+
+  // 소리 — 등원 높은 음 하나, 하원 두 음, 무시·없음 낮은 음
+  var AC = null;
+  function beep(kind) {
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      var seq = kind === 'in' ? [[880, 0, .16]] : kind === 'out' ? [[660, 0, .12], [990, .15, .16]] : [[300, 0, .22]];
+      seq.forEach(function (s) { var o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = s[0]; o.connect(g); g.connect(AC.destination); var t = AC.currentTime + s[1]; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + s[2]); o.start(t); o.stop(t + s[2] + .02); });
+    } catch (e) {}
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  function tick() {
+    var t = now(), k = KioskCore.kst(t), d = new Date(t + 9 * 3600000);
+    $('clock').textContent = k.hm; $('date').textContent = (d.getUTCMonth() + 1) + '월 ' + d.getUTCDate() + '일 ' + DOW[d.getUTCDay()] + '요일';
+    if (view.kind === 'done' && view.left !== undefined) { var left = Math.max(0, Math.ceil((view.until - Date.now()) / 1000)); var b = $('cBtn'); if (b) b.textContent = left > 0 ? '취소 ' + left : '취소'; if (left <= 0 && b) b.disabled = true; }
+  }
+  function bar() {
+    if (!K) return;
+    $('bDev').textContent = '기기 ' + (cfg.dev || '?');
+    $('bRos').textContent = '명부 ' + K.count() + '명';
+    $('bOut').textContent = K.pending();
+    var n = K.S.net; $('bDot').className = 'dot ' + (n.ok === true ? 'ok' : n.ok === false ? 'bad' : '');
+    $('bNet').textContent = n.ok === true ? '연결됨' : n.ok === false ? '연결 끊김 · 다시 시도 중' : '연결 확인 중';
+  }
+  function draw() {
+    var h = '';
+    if (view.kind === 'idle') {
+      h = '<div><div class="hint">' + (K && K.count() ? '학부모님 휴대폰 뒷자리 4자리' : '명부 받는 중…') + '</div><div class="dots">' + [0, 1, 2, 3].map(function (i) { return '<i' + (i < buf.length ? ' class="on"' : '') + '></i>'; }).join('') + '</div></div>';
+    } else if (view.kind === 'pick') {
+      h = '<div style="width:100%"><div class="ttl">이름을 눌러 주세요</div><div class="pick">' + view.list.map(function (s, i) { return '<button data-pick="' + i + '">' + esc(s.nm) + (s.c ? '<small>' + esc(s.c) + '</small>' : '') + '</button>'; }).join('') + '<button class="back" data-back="1">다시 입력</button></div></div>';
+    } else if (view.kind === 'done') {
+      h = '<div class="res"><div class="nm">' + esc(view.s.nm) + '</div><div class="kind' + (view.t === '하원' ? ' out' : '') + '">' + view.t + ' ✓</div><div class="tm">' + view.hm + '</div><button class="cancel" id="cBtn" data-cancel="1">취소 5</button></div>';
+    } else if (view.kind === 'ign') {
+      h = '<div class="res warn"><div class="nm">' + esc(view.s.nm) + '</div><div class="msg">방금 ' + view.last.t + ' 처리됐어요 (' + KioskCore.kst(view.last.at).hm + ')</div></div>';
+    } else if (view.kind === 'none') {
+      h = '<div class="res warn"><div class="nm">' + esc(view.code) + '</div><div class="msg">없는 번호예요. 다시 눌러 주세요</div></div>';
+    } else if (view.kind === 'cancelled') {
+      h = '<div class="res warn"><div class="nm">취소했어요</div></div>';
+    }
+    $('stage').innerHTML = h; tick(); bar();
+  }
+  function back(ms) { clearTimeout(resetT); resetT = setTimeout(function () { view = { kind: 'idle' }; buf = ''; draw(); }, ms); }
+  function choose(s) {
+    var t0 = performance.now(), r = K.commit(s);
+    if (r.ignored) { view = { kind: 'ign', s: s, last: r.last }; beep('x'); back(2500); }
+    else { view = { kind: 'done', s: s, t: r.t, hm: r.hm, key: r.rec.key, until: Date.now() + KioskCore.HOLD, left: 5 }; beep(r.t === '하원' ? 'out' : 'in'); back(KioskCore.HOLD); }
+    draw();
+    window.__kiosk.log.push({ ms: performance.now() - t0, n: s.n, t: r.ignored ? 'ign' : r.t, key: r.rec ? r.rec.key : '' });
+  }
+  function enter(code) {
+    var t0 = performance.now(), L = K.lookup(code);
+    if (!L.length) { view = { kind: 'none', code: code }; beep('x'); back(2000); draw(); window.__kiosk.log.push({ ms: performance.now() - t0, t: 'none' }); return; }
+    if (L.length === 1) return choose(L[0]);
+    view = { kind: 'pick', list: L }; clearTimeout(resetT); back(15000); draw(); window.__kiosk.log.push({ ms: performance.now() - t0, t: 'pick' });
+  }
+  function key(k) {
+    if (!K) return;
+    if (view.kind === 'pick') return;
+    if (view.kind !== 'idle') { clearTimeout(resetT); view = { kind: 'idle' }; buf = ''; }
+    if (k === 'C') buf = ''; else if (k === 'B') buf = buf.slice(0, -1); else if (buf.length < 4) buf += k;
+    if (buf.length === 4) { var c = buf; buf = ''; return enter(c); }
+    draw();
+  }
+  // 키패드
+  var pad = $('pad');
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'B'].forEach(function (k) {
+    var b = document.createElement('button'); b.dataset.k = k; b.textContent = k === 'C' ? '지우기' : k === 'B' ? '←' : k; if (k === 'C' || k === 'B') b.className = 'fn'; pad.appendChild(b);
+  });
+  pad.addEventListener('pointerdown', function (e) { var b = e.target.closest('button'); if (!b) return; e.preventDefault(); b.classList.add('pr'); setTimeout(function () { b.classList.remove('pr'); }, 90); key(b.dataset.k); });
+  document.addEventListener('keydown', function (e) { if (/^[0-9]$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('B'); else if (e.key === 'Escape') key('C'); });
+  $('stage').addEventListener('click', function (e) {
+    var p = e.target.closest('[data-pick]'), bk = e.target.closest('[data-back]'), c = e.target.closest('[data-cancel]');
+    if (p && view.kind === 'pick') return choose(view.list[+p.dataset.pick]);
+    if (bk) { view = { kind: 'idle' }; buf = ''; draw(); }
+    if (c && view.kind === 'done') { if (K.cancel(view.key)) { view = { kind: 'cancelled' }; back(1500); draw(); } }
+  });
+  // 설정 — 시계 3초 누르기
+  var lp = null;
+  $('clock').addEventListener('pointerdown', function () { lp = setTimeout(openSet, 3000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { $('clock').addEventListener(ev, function () { clearTimeout(lp); }); });
+  function openSet() {
+    $('sDev').innerHTML = [1, 2, 3, 4].map(function (d) { return '<button data-d="' + d + '" class="' + (String(cfg.dev) === String(d) ? 'on' : '') + '">' + d + '</button>'; }).join('');
+    $('sKey').value = cfg.key || ''; $('sTest').checked = !!cfg.test; $('sApi').value = cfg.api || FAST; $('sErr').textContent = ''; $('set').classList.add('on');
+  }
+  $('sDev').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; [].forEach.call($('sDev').children, function (x) { x.classList.toggle('on', x === b); }); });
+  $('sGo').addEventListener('click', function () {
+    var on = $('sDev').querySelector('.on'); if (!on) { $('sErr').textContent = '기기 번호를 골라 주세요'; return; }
+    var test = $('sTest').checked, k = $('sKey').value.trim(); if (!test && !k) { $('sErr').textContent = '기기 열쇠를 넣어 주세요'; return; }
+    cfg = { dev: on.dataset.d, key: k, test: test, api: $('sApi').value.trim() || FAST }; LS.set('kiosk_cfg', JSON.stringify(cfg)); location.replace(location.pathname);
+  });
+  function post(body) {
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
+    return fetch(cfg.api || FAST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { return r.json(); }).finally(function () { clearTimeout(to); });
+  }
+  function boot() {
+    document.body.classList.toggle('is-test', !!cfg.test);
+    if (!cfg.dev || (!cfg.test && !cfg.key)) { draw(); openSet(); return; }
+    K = KioskCore.create({ post: post, store: LS, now: now, dev: cfg.dev, key: cfg.key, test: !!cfg.test, onChange: bar });
+    draw();
+    var first = function () { K.syncRoster().then(function (ok) { draw(); if (!ok && !K.count()) setTimeout(first, 3000); }); };
+    first();
+    setInterval(function () { K.syncRoster(); }, cfg.test ? 10000 : 20000); // 다른 태블릿이 찍은 그날 상태 + 명부 바뀜(같으면 목록은 안 옴)
+    K.start();
+    try { if (navigator.wakeLock) { var wl = function () { navigator.wakeLock.request('screen').catch(function () {}); }; wl(); document.addEventListener('visibilitychange', function () { if (!document.hidden) wl(); }); } } catch (e) {}
+  }
+  setInterval(tick, 500);
+  boot();
+})();
+</script>
+</body>
+</html>
