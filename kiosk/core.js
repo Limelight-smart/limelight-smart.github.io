@@ -87,7 +87,8 @@
       try {
         var j = await o.post(b);
         if (!j || !j.ok) throw new Error(j && j.error || 'rec');
-        var res = j.res || {};
+        var res = j.res || {}, fx = j.fix || {};
+        go.forEach(function (r) { var t2 = fx[r.key]; if (!t2) return; r.t = t2; var m = S.st[kst(r.at).day]; if (m && m[r.n] && m[r.n].at === r.at) m[r.n].t = t2; save('st', S.st); }); // 2차: 서버가 다시 정한 등원/하원으로 고쳐 둠
         go.forEach(function (r) { var v = res[r.key]; if (v === 'ok' || v === 'dup' || v === 'skip3' || v === 'bad') { r.result = v; done++; } });
         S.out = S.out.filter(function (r) { return !r.result; });
         S.sent += done; netOk(Date.now() - t0);
