@@ -1,0 +1,22 @@
+{
+ "name": "라임라잇수학 학생",
+ "short_name": "라임라잇 학생",
+ "background_color": "#F5F7F6",
+ "start_url": "./index.html",
+ "scope": "./",
+ "display": "standalone",
+ "theme_color": "#1f2a44",
+ "lang": "ko",
+ "icons": [
+  {
+   "src": "../assets/icon-student-192.png?v=1031",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "../assets/icon-student-512.png?v=1031",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
+}
