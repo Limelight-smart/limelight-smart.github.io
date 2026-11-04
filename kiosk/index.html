@@ -283,7 +283,7 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   $('clock').addEventListener('pointerdown', function () { lp = setTimeout(openSet, 3000); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { $('clock').addEventListener(ev, function () { clearTimeout(lp); }); });
   function openSet() {
-    $('sDev').innerHTML = [1, 2, 3, 4].map(function (d) { return '<button data-d="' + d + '" class="' + (String(cfg.dev) === String(d) ? 'on' : '') + '">' + d + '</button>'; }).join('');
+    $('sDev').innerHTML = [1, 2, 3, 4, 5].map(function (d) { return '<button data-d="' + d + '" class="' + (String(cfg.dev) === String(d) ? 'on' : '') + '">' + d + '</button>'; }).join('');
     $('sKey').value = cfg.key || ''; $('sTest').checked = !!cfg.test; $('sApi').value = cfg.api || FAST; $('sErr').textContent = ''; $('set').classList.add('on'); bar();
   }
   $('sRe').addEventListener('click', function () { if (K) K.syncRoster().then(function () { bar(); draw(); }); });
