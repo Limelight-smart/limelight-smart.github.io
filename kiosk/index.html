@@ -18,8 +18,9 @@
 :root{--bg:#fbfaf5;--panel:#f3f1e6;--key:#fff;--keyt:#1e2a38;--keyp:#ecebdd;--fn:#efeadb;--g:#7cc242;--g2:#1e2a38;--lime:#7cc242;--ok:#2e9d57;--pu:#7a5bc4;--o:#e08a1e;--r:#d9493d;--t:#1e2a38;--m:#7d8794;--line:#e6e3d3;--gap:1.6vh;--out:2.5vh}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 html,body{margin:0;height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--t);font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;touch-action:manipulation;border-top:.8vh solid var(--lime)}
-.app{display:grid;grid-template-columns:50fr 50fr;height:calc(100vh - .8vh);height:calc(100dvh - .8vh);gap:0}
+body{background:var(--bg);color:var(--t);font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;touch-action:manipulation}
+body::after{content:"";position:fixed;inset:0;border:.8vh solid var(--lime);pointer-events:none;z-index:50} /* 킴쌤 11/5 02:53 테두리 네 변 모두 라임 */
+.app{display:grid;grid-template-columns:50fr 50fr;height:100vh;height:100dvh;gap:0}
 .tl{display:flex;flex-direction:column;min-height:0;min-width:0;position:relative;flex:1;padding:0 0 0 .4vh}
 .tlc{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 var(--out) 6vh 0;touch-action:pan-y}
 .tlc::-webkit-scrollbar{display:none}
