@@ -211,10 +211,10 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   $('tlc').addEventListener('scroll', function () { tlMore(); if (popOpen()) popTouch(); });
   function bar() {
     if (!K) return;
-    var n = K.S.net, p = K.pending(), bad = n.ok === false || p > 0;
+    var n = K.S.net, p = K.pending(), bad = n.ok === false; // 킴쌤 11/5 02:41 '보낼 줄 n'은 안 보임 — 연결 끊김일 때만
     $('bar').style.display = bad ? 'flex' : 'none';
-    $('bNet').textContent = (n.ok === false ? '연결 끊김' : '연결 확인') + (p > 0 ? ' · 보낼 줄 ' + p : '');
-    if (n.ok !== false && p > 0) $('bNet').textContent = '보낼 줄 ' + p;
+    $('bNet').textContent = '연결 끊김';
+
     if ($('sRos')) { $('sRos').textContent = '명부 ' + K.count() + '명' + (K.staffCount() ? ' · 직원 ' + K.staffCount() + '명' : ''); $('sInfo').textContent = '기기 ' + (cfg.dev || '?') + ' · 보낼 줄 ' + p + ' · ' + (n.ok === true ? '연결됨' : n.ok === false ? '연결 끊김' : '연결 확인 중'); }
   }
   function draw() {
