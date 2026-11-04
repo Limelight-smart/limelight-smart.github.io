@@ -220,7 +220,7 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function draw() {
     var h = '';
     if (view.kind === 'idle') {
-      h = '<div><div class="num" id="num">' + esc(buf) + '</div><div class="hint">' + (K && K.count() ? '출결번호를 입력하세요' : '명부 받는 중…') + '</div></div>';
+      h = '<div><div class="num" id="num">' + esc(buf) + '</div><div class="hint">' + '출결번호를 입력하세요' + '</div></div>';
     } else if (view.kind === 'pick') {
       h = '<div style="width:100%"><div class="ttl">이름을 눌러 주세요</div><div class="pick">' + view.list.map(function (s, i) { return '<button data-pick="' + i + '"' + (s.st ? ' class="stf"' : '') + '>' + esc(s.nm) + (s.st ? '<small>선생님</small>' : s.c ? '<small>' + esc(s.c) + '</small>' : '') + '</button>'; }).join('') + '<button class="back" data-back="1">다시 입력</button></div></div>';
     } else if (view.kind === 'done') {
