@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#121a2c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
 <title>라임라잇 출석</title>
 <link rel="icon" href="../assets/icon-192.png?v=1022">
 <link rel="apple-touch-icon" href="../assets/icon-192.png?v=1022">
@@ -98,6 +100,11 @@ body.has-lt .bar .lo{display:inline-block}
   <div class="err" id="sErr"></div>
   <div class="info">설정 다시 열기: 시계를 3초 누르기</div>
 </div></div>
+<script>
+/* 첫 터치마다 전체화면 요청(안드로이드 크롬). 실패·미지원은 조용히 무시, 나갔다 오면 다음 터치에 다시 */
+(function(){var d=document,e=d.documentElement;function go(){try{if(d.fullscreenElement||!e.requestFullscreen)return;var r=e.requestFullscreen({navigationUI:"hide"});if(r&&r.catch)r.catch(function(){});}catch(x){}}
+d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})();
+</script>
 <script src="core.js?v=1104a"></script>
 <script>
 (function () {
