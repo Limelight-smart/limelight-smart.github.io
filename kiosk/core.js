@@ -25,7 +25,8 @@
       sent: 0,
     };
     var byD4 = {};
-    function index() { byD4 = {}; (S.roster.list || []).forEach(function (s) { (s.p || []).forEach(function (d) { (byD4[d] = byD4[d] || []).push(s); }); }); Object.keys(byD4).forEach(function (d) { byD4[d].sort(function (a, b) { return a.nm < b.nm ? -1 : a.nm > b.nm ? 1 : 0; }); }); }
+    // 114: 직원(staff, st:1)도 같은 번호 표에 — 학생과 번호가 같으면 둘 다 나와 고르기 화면(직원은 뒤에)
+    function index() { byD4 = {}; (S.roster.list || []).forEach(function (s) { (s.p || []).forEach(function (d) { (byD4[d] = byD4[d] || []).push(s); }); }); (S.roster.staff || []).forEach(function (s) { s.st = 1; (s.p || []).forEach(function (d) { (byD4[d] = byD4[d] || []).push(s); }); }); Object.keys(byD4).forEach(function (d) { byD4[d].sort(function (a, b) { return (a.st ? 1 : 0) - (b.st ? 1 : 0) || (a.nm < b.nm ? -1 : a.nm > b.nm ? 1 : 0); }); }); }
     index();
     function changed() { if (o.onChange) try { o.onChange(); } catch (e) {} }
     function dayNow() { return kst(now()).day; }
@@ -38,13 +39,15 @@
     function decide(s) {
       var t = now(), L = lastOf(s.n);
       if (L && Math.abs(t - L.at) < gap3) return { ignored: true, last: L };
+      if (s.st) return { t: !L || L.t === '퇴근' ? '출근' : '퇴근' }; // 114 직원: 출근·퇴근 번갈아(서버가 다시 정함)
       return { t: !L || L.t === '하원' ? '등원' : '하원' };
     }
     // 기록 확정 → 보낼 줄(5초 기다렸다 보냄 — 그 안에 [취소] 가능)
     function commit(s) {
       var d = decide(s); if (d.ignored) return { ignored: true, last: d.last };
       var at = now(), day = kst(at).day, prev = lastOf(s.n, day) || null;
-      var r = { key: String(o.dev) + '|' + at + '|' + s.n, at: at, dev: String(o.dev), n: s.n, nm: s.nm, c: s.c || '', t: d.t, hold: at + hold, prev: prev };
+      var r = { key: String(o.dev) + '|' + at + '|' + s.n, at: at, dev: String(o.dev), n: s.n, nm: s.nm, c: s.c || '', t: d.t, hold: at + (s.st ? Math.min(hold, 2000) : hold), prev: prev };
+      if (s.st) r.st = 1;
       (S.st[day] = S.st[day] || {})[s.n] = { t: d.t, at: at }; keepDays();
       S.out.push(r); save('out', S.out); save('st', S.st); changed();
       return { rec: r, t: d.t, hm: kst(at).hm };
@@ -72,7 +75,7 @@
       try {
         var j = await o.post(b);
         if (!j || !j.ok) throw new Error(j && j.error || 'roster');
-        if (j.list) { S.roster = { v: j.v, list: j.list, at: now() }; index(); save('roster', S.roster); } else { S.roster.at = now(); save('roster', S.roster); }
+        if (j.list) { S.roster = { v: j.v, list: j.list, staff: j.staff || [], at: now() }; index(); save('roster', S.roster); } else { S.roster.at = now(); save('roster', S.roster); }
         merge(j.day || day, j.today); netOk(); changed(); return true;
       } catch (e) { netErr(e); changed(); return false; }
     }
@@ -82,7 +85,7 @@
       var t = now(), go = S.out.filter(function (r) { return r.hold <= t; }).slice(0, batch || 10);
       if (!go.length) return 0;
       S.net.sending = true; go.forEach(function (r) { r.sending = true; });
-      var b = base(); b.op = 'rec'; b.recs = go.map(function (r) { return { key: r.key, at: r.at, dev: r.dev, n: r.n, nm: r.nm, c: r.c, t: r.t }; });
+      var b = base(); b.op = 'rec'; b.recs = go.map(function (r) { var x = { key: r.key, at: r.at, dev: r.dev, n: r.n, nm: r.nm, c: r.c, t: r.t }; if (r.st) x.st = 1; return x; });
       var t0 = Date.now(), done = 0;
       try {
         var j = await o.post(b);
@@ -111,7 +114,7 @@
     return {
       S: S, lookup: lookup, decide: decide, commit: commit, cancel: cancel, syncRoster: syncRoster, pumpOnce: pumpOnce, merge: merge,
       start: function () { stopped = false; loop(); }, stop: function () { stopped = true; if (timer) clearTimeout(timer); },
-      pending: function () { return S.out.length; }, kst: kst, count: function () { return (S.roster.list || []).length; },
+      pending: function () { return S.out.length; }, kst: kst, count: function () { return (S.roster.list || []).length; }, staffCount: function () { return (S.roster.staff || []).length; },
     };
   }
   return { create: create, kst: kst, GAP3: GAP3, HOLD: HOLD };

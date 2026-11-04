@@ -34,6 +34,8 @@ body{background:var(--bg);color:var(--t);font-family:Pretendard,-apple-system,"A
 .res .nm{font-size:clamp(48px,10vh,120px);font-weight:800;line-height:1.1;word-break:keep-all}
 .res .kind{display:inline-block;margin-top:2.4vh;font-size:clamp(34px,7vh,80px);font-weight:800;padding:.6vh 4vh;border-radius:999px;background:var(--g);color:#fff}
 .res .kind.out{background:var(--o)}
+.res.stf .nm{color:#bfe6c9}.res.stf .kind{background:#2e8a57}.res.stf .kind.out{background:#7a5bc4}
+.pick button.stf{background:#d7f0df}
 .res .tm{font-size:clamp(24px,4.5vh,48px);color:var(--m);font-weight:700;margin-top:1.6vh;font-variant-numeric:tabular-nums}
 .res .cls{font-size:clamp(18px,3vh,30px);color:var(--m);margin-top:1vh}
 .res.warn .nm{font-size:clamp(34px,7vh,80px)}
@@ -108,7 +110,7 @@ body:not(.has-lt) #bLo{display:none}
 (function(){var d=document,e=d.documentElement;function go(){try{if(d.fullscreenElement||!e.requestFullscreen)return;var r=e.requestFullscreen({navigationUI:"hide"});if(r&&r.catch)r.catch(function(){});}catch(x){}}
 d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})();
 </script>
-<script src="core.js?v=1104a"></script>
+<script src="core.js?v=1105a"></script>
 <script>
 (function () {
   'use strict';
@@ -150,16 +152,17 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
     $('bar').style.display = bad ? 'flex' : 'none';
     $('bNet').textContent = (n.ok === false ? '연결 끊김' : '연결 확인') + (p > 0 ? ' · 보낼 줄 ' + p : '');
     if (n.ok !== false && p > 0) $('bNet').textContent = '보낼 줄 ' + p;
-    if ($('sRos')) { $('sRos').textContent = '명부 ' + K.count() + '명'; $('sInfo').textContent = '기기 ' + (cfg.dev || '?') + ' · 보낼 줄 ' + p + ' · ' + (n.ok === true ? '연결됨' : n.ok === false ? '연결 끊김' : '연결 확인 중'); }
+    if ($('sRos')) { $('sRos').textContent = '명부 ' + K.count() + '명' + (K.staffCount() ? ' · 직원 ' + K.staffCount() + '명' : ''); $('sInfo').textContent = '기기 ' + (cfg.dev || '?') + ' · 보낼 줄 ' + p + ' · ' + (n.ok === true ? '연결됨' : n.ok === false ? '연결 끊김' : '연결 확인 중'); }
   }
   function draw() {
     var h = '';
     if (view.kind === 'idle') {
       h = '<div><div class="hint">' + (K && K.count() ? '출결번호를 입력하세요' : '명부 받는 중…') + '</div><div class="num" id="num">' + esc(buf) + '</div></div>';
     } else if (view.kind === 'pick') {
-      h = '<div style="width:100%"><div class="ttl">이름을 눌러 주세요</div><div class="pick">' + view.list.map(function (s, i) { return '<button data-pick="' + i + '">' + esc(s.nm) + (s.c ? '<small>' + esc(s.c) + '</small>' : '') + '</button>'; }).join('') + '<button class="back" data-back="1">다시 입력</button></div></div>';
+      h = '<div style="width:100%"><div class="ttl">이름을 눌러 주세요</div><div class="pick">' + view.list.map(function (s, i) { return '<button data-pick="' + i + '"' + (s.st ? ' class="stf"' : '') + '>' + esc(s.nm) + (s.st ? '<small>선생님</small>' : s.c ? '<small>' + esc(s.c) + '</small>' : '') + '</button>'; }).join('') + '<button class="back" data-back="1">다시 입력</button></div></div>';
     } else if (view.kind === 'done') {
-      h = '<div class="res"><div class="nm">' + esc(view.s.nm) + '</div><div class="kind' + (view.t === '하원' ? ' out' : '') + '">' + view.t + ' ✓</div><div class="tm">' + view.hm + '</div><button class="cancel" id="cBtn" data-cancel="1">취소 5</button></div>';
+      h = view.s.st ? '<div class="res stf"><div class="nm">' + esc(view.s.nm) + ' 선생님</div><div class="kind' + (view.t === '퇴근' ? ' out' : '') + '">' + view.t + ' ' + view.hm + '</div><div><button class="cancel" id="cBtn" data-cancel="1">취소 2</button></div></div>' // 114 직원: 다른 색 · 2초
+        : '<div class="res"><div class="nm">' + esc(view.s.nm) + '</div><div class="kind' + (view.t === '하원' ? ' out' : '') + '">' + view.t + ' ✓</div><div class="tm">' + view.hm + '</div><button class="cancel" id="cBtn" data-cancel="1">취소 5</button></div>';
     } else if (view.kind === 'ign') {
       h = '<div class="res warn"><div class="nm">' + esc(view.s.nm) + '</div><div class="msg">방금 ' + view.last.t + ' 처리됐어요 (' + KioskCore.kst(view.last.at).hm + ')</div></div>';
     } else if (view.kind === 'none') {
@@ -173,7 +176,7 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function choose(s) {
     var t0 = performance.now(), r = K.commit(s);
     if (r.ignored) { view = { kind: 'ign', s: s, last: r.last }; beep('x'); back(2500); }
-    else { view = { kind: 'done', s: s, t: r.t, hm: r.hm, key: r.rec.key, until: Date.now() + KioskCore.HOLD, left: 5 }; beep(r.t === '하원' ? 'out' : 'in'); back(KioskCore.HOLD); }
+    else { var hd = s.st ? 2000 : KioskCore.HOLD; view = { kind: 'done', s: s, t: r.t, hm: r.hm, key: r.rec.key, until: Date.now() + hd, left: hd / 1000 }; beep(r.t === '하원' || r.t === '퇴근' ? 'out' : 'in'); back(hd); }
     draw();
     window.__kiosk.log.push({ ms: performance.now() - t0, n: s.n, t: r.ignored ? 'ign' : r.t, key: r.rec ? r.rec.key : '' });
   }
