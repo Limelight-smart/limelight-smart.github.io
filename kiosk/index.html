@@ -63,6 +63,9 @@ body.is-test .test{display:block}
 .set .go{width:100%;height:50px;margin-top:20px;border:0;border-radius:12px;background:var(--g);color:#fff;font-size:18px;font-weight:800}
 .set .err{color:#c62828;font-weight:700;text-align:center;min-height:1.2em;margin-top:10px;font-size:14px}
 .set .info{font-size:13px;color:#6b7480;text-align:center;margin-top:8px}
+.lg{background:var(--bg)}.lg .go:disabled{opacity:.5}
+.bar .lo{pointer-events:auto;border:0;background:transparent;color:var(--m);font-size:13px;text-decoration:underline;padding:4px 2px;display:none}
+body.has-lt .bar .lo{display:inline-block}
 @media (orientation:portrait){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.right{min-height:52vh}.clock{font-size:12vh}.left{padding:3vh 16px}}
 </style>
 </head>
@@ -77,7 +80,14 @@ body.is-test .test{display:block}
   </div>
   <div class="right" id="pad"></div>
 </div>
-<div class="bar"><span id="bDev"></span><span id="bRos"></span><span>보낼 줄 <b id="bOut">0</b></span><span><i class="dot" id="bDot"></i><span id="bNet">연결 확인 중</span></span></div>
+<div class="bar"><button class="lo" id="bLo" type="button">로그아웃</button><span id="bDev"></span><span id="bRos"></span><span>보낼 줄 <b id="bOut">0</b></span><span><i class="dot" id="bDot"></i><span id="bNet">연결 확인 중</span></span></div>
+<div class="set lg" id="lg"><div class="box">
+  <h2>라임라잇 출석</h2>
+  <label for="lId">아이디</label><input type="text" id="lId" autocomplete="username" autocapitalize="off" spellcheck="false">
+  <label for="lPw">비밀번호</label><input type="password" id="lPw" autocomplete="current-password">
+  <button class="go" id="lGo" type="button">로그인</button>
+  <div class="err" id="lErr"></div>
+</div></div>
 <div class="set" id="set"><div class="box">
   <h2>키패드 설정</h2>
   <label>기기 번호</label><div class="devs" id="sDev"></div>
@@ -88,12 +98,15 @@ body.is-test .test{display:block}
   <div class="err" id="sErr"></div>
   <div class="info">설정 다시 열기: 시계를 3초 누르기</div>
 </div></div>
-<script src="core.js?v=1029a"></script>
+<script src="core.js?v=1104a"></script>
 <script>
 (function () {
   'use strict';
   var FAST = 'https://limelight-fast-hrsvpdbbmq-du.a.run.app';
-  var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del: function (k) { try { localStorage.removeItem(k); } catch (e) {} } };
+  // 107 관리자 로그인 — 기기 토큰(30일)은 이 기기에만. 아이디·비밀번호는 저장하지 않음
+  var LT = (function () { try { return JSON.parse(LS.get('kiosk_lt') || 'null'); } catch (e) { return null; } })();
+  function ltNow() { return LT && LT.lt && LT.exp > Date.now() ? LT.lt : ''; }
   var Q = new URLSearchParams(location.search);
   var cfg = (function () { try { return JSON.parse(LS.get('kiosk_cfg') || 'null'); } catch (e) { return null; } })() || {};
   if (Q.get('dev')) cfg.dev = Q.get('dev');
@@ -200,10 +213,41 @@ body.is-test .test{display:block}
     return fetch(cfg.api || FAST, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.json(); }).finally(function () { clearTimeout(to); });
   }
+  // 107: 로그인 화면
+  function dropLt() { LT = null; LS.del('kiosk_lt'); document.body.classList.remove('has-lt'); }
+  function showLogin(msg, setup) {
+    $('lErr').textContent = setup ? '관리자 설정 필요' : (msg || ''); $('lGo').disabled = !!setup; $('lPw').value = '';
+    $('set').classList.remove('on'); $('lg').classList.add('on');
+  }
+  var LERR = { bad: '아이디 또는 비밀번호가 맞지 않아요', lock: '여러 번 틀려 10분 동안 잠겼어요', setup: '관리자 설정 필요', busy: '서버 연결이 잠시 안 돼요 · 다시 눌러 주세요' };
+  function doLogin() {
+    var id = $('lId').value.trim(), pw = $('lPw').value; if (!id || !pw) { $('lErr').textContent = '아이디와 비밀번호를 넣어 주세요'; return; }
+    $('lGo').disabled = true; $('lErr').textContent = '확인 중…';
+    post({ a: 'kiosk', op: 'login', id: id, pw: pw, dev: String(cfg.dev || '') }).then(function (j) {
+      $('lGo').disabled = false;
+      if (!j || !j.ok || !j.lt) { $('lErr').textContent = LERR[j && j.error] || LERR.busy; if (j && j.error === 'setup') $('lGo').disabled = true; $('lPw').value = ''; return; }
+      LT = { lt: j.lt, exp: +j.exp || Date.now() + 30 * 864e5 }; LS.set('kiosk_lt', JSON.stringify(LT)); LS.set('kiosk_lon', '1');
+      document.body.classList.add('has-lt'); $('lPw').value = ''; $('lErr').textContent = ''; $('lg').classList.remove('on');
+      if (!K) start(); else draw();
+    }, function () { $('lGo').disabled = false; $('lErr').textContent = LERR.busy; });
+  }
+  $('lGo').addEventListener('click', doLogin);
+  $('lPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+  $('bLo').addEventListener('click', function () { if (!confirm('로그아웃할까요?')) return; dropLt(); showLogin(''); });
+  // 처음 열 때: 살아 있는 토큰이 있으면 바로 키패드(서버 확인은 뒤에서), 없으면 서버에 로그인이 필요한지 묻고 기다림
+  function auth() { return post({ a: 'kiosk', op: 'auth', lt: ltNow() }).then(function (j) { if (!j || !j.ok) throw new Error('auth'); if (j.known) LS.set('kiosk_lon', j.on || j.must ? '1' : '0'); return j; }); }
+  function judge(j) { if (j.on && !j.valid) { dropLt(); showLogin(''); return false; } if (!j.on && j.must) { showLogin('', true); return false; } return true; }
   function boot() {
     document.body.classList.toggle('is-test', !!cfg.test);
+    if (cfg.test) return start(); // 시험 모드(예시 명부)는 로그인 없음
+    if (ltNow()) { document.body.classList.add('has-lt'); start(); auth().then(judge, function () {}); return; }
+    $('stage').innerHTML = '<div class="hint">연결 중…</div>';
+    auth().then(function (j) { if (judge(j)) start(); }, function () { if (LS.get('kiosk_lon') === '1') showLogin('서버 연결이 안 돼요 · 잠시 뒤 로그인해 주세요'); else start(); }); // 연결이 안 되면: 전에 로그인이 켜져 있던 기기만 막음
+  }
+  function start() {
+    if (K) return;
     if (!cfg.dev || (!cfg.test && !cfg.key)) { draw(); openSet(); return; }
-    K = KioskCore.create({ post: post, store: LS, now: now, dev: cfg.dev, key: cfg.key, test: !!cfg.test, onChange: bar });
+    K = KioskCore.create({ post: post, store: LS, now: now, dev: cfg.dev, key: cfg.key, lt: ltNow, test: !!cfg.test, onChange: bar, onLogin: function () { if ($('lg').classList.contains('on')) return; dropLt(); showLogin('다시 로그인해 주세요'); } });
     draw();
     var first = function () { K.syncRoster().then(function (ok) { draw(); if (!ok && !K.count()) setTimeout(first, 3000); }); };
     first();

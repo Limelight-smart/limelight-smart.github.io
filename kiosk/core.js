@@ -9,7 +9,7 @@
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function kst(ms) { var d = new Date(ms + 9 * 3600000); return { day: d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()), hm: pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()), hms: pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()) }; }
 
-  // o: { post(body) → Promise<json>, store {get(k), set(k,v)}, now(), dev, key, test, onChange(), hold, gap3 }
+  // o: { post(body) → Promise<json>, store {get(k), set(k,v)}, now(), dev, key, lt(), test, onChange(), onLogin(), hold, gap3 }
   function create(o) {
     var store = o.store || { get: function () { return null; }, set: function () {} };
     var now = o.now || function () { return Date.now(); };
@@ -64,9 +64,9 @@
       Object.keys(today).forEach(function (n) { var x = today[n], L = m[n]; if (!L || x.at > L.at) m[n] = { t: x.t, at: x.at }; });
       save('st', S.st);
     }
-    function base() { var b = { a: 'kiosk', k: o.key || '', dev: String(o.dev) }; if (o.test) b.test = 1; return b; }
+    function base() { var b = { a: 'kiosk', k: o.key || '', dev: String(o.dev) }; if (o.test) b.test = 1; var lt = typeof o.lt === 'function' ? o.lt() : o.lt; if (lt) b.lt = lt; return b; } // 107: 관리자 로그인 토큰
     function netOk(ms) { S.net.ok = true; S.net.lastOk = now(); S.net.fails = 0; S.net.lastErr = ''; if (ms !== undefined) S.net.lastMs = ms; }
-    function netErr(e) { S.net.ok = false; S.net.fails++; S.net.lastErr = String(e && e.message || e || '').slice(0, 60); }
+    function netErr(e) { S.net.ok = false; S.net.fails++; S.net.lastErr = String(e && e.message || e || '').slice(0, 60); if (S.net.lastErr === 'login' && o.onLogin) try { o.onLogin(); } catch (x) {} } // 107: 서버가 토큰을 거절 → 화면이 로그인으로(보낼 줄은 그대로 남음)
     async function syncRoster() {
       var day = dayNow(), b = base(); b.op = 'roster'; b.v = S.roster.v; b.day = day;
       try {
