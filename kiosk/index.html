@@ -151,7 +151,7 @@ body:not(.has-lt) #bLo{display:none}
 (function(){var d=document,e=d.documentElement;function go(){try{if(d.fullscreenElement||!e.requestFullscreen)return;var r=e.requestFullscreen({navigationUI:"hide"});if(r&&r.catch)r.catch(function(){});}catch(x){}}
 d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})();
 </script>
-<script src="core.js?v=1105a"></script>
+<script src="core.js?v=1105b"></script>
 <script>
 (function () {
   'use strict';
@@ -340,6 +340,12 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
     first();
     setInterval(function () { K.syncRoster(); }, cfg.test ? 10000 : 20000); // 다른 태블릿이 찍은 그날 상태 + 명부 바뀜(같으면 목록은 안 옴)
     K.start();
+    // 133: 켜 둔 태블릿이 옛 화면으로 계속 도는 것 막기 — 10분마다 새 화면(core.js?v=)을 보고, 바뀌었으면 쉬는 때(입력·팝업·보낼 줄 없음) 다시 열기
+    var myV = ((document.querySelector('script[src^="core.js"]') || {}).src || '').split('v=')[1] || '', newV = '';
+    setInterval(function () {
+      if (newV) { if (view.kind === 'idle' && !buf && !popOpen() && !K.pending()) location.reload(); return; }
+      fetch('./?pv=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) { var m = /core\.js\?v=([\w.-]+)/.exec(t || ''); if (m && myV && m[1] !== myV) newV = m[1]; }, function () {});
+    }, 600000);
     try { if (navigator.wakeLock) { var wl = function () { navigator.wakeLock.request('screen').catch(function () {}); }; wl(); document.addEventListener('visibilitychange', function () { if (!document.hidden) wl(); }); } } catch (e) {}
   }
   setInterval(tick, 500);

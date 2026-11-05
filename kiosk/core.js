@@ -71,7 +71,7 @@
     function netOk(ms) { S.net.ok = true; S.net.lastOk = now(); S.net.fails = 0; S.net.lastErr = ''; if (ms !== undefined) S.net.lastMs = ms; }
     function netErr(e) { S.net.ok = false; S.net.fails++; S.net.lastErr = String(e && e.message || e || '').slice(0, 60); if (S.net.lastErr === 'login' && o.onLogin) try { o.onLogin(); } catch (x) {} } // 107: 서버가 토큰을 거절 → 화면이 로그인으로(보낼 줄은 그대로 남음)
     async function syncRoster() {
-      var day = dayNow(), b = base(); b.op = 'roster'; b.v = S.roster.v; b.day = day;
+      var day = dayNow(), b = base(); b.op = 'roster'; b.v = Array.isArray(S.roster.staff) ? S.roster.v : ''; b.day = day; // 133: 114 전 화면이 저장한 명부(직원 칸 없음)는 버전이 같아도 통째로 다시 받음
       try {
         var j = await o.post(b);
         if (!j || !j.ok) throw new Error(j && j.error || 'roster');
