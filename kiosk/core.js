@@ -20,7 +20,8 @@
     var S = {
       roster: load('roster', { v: '', list: [], at: 0 }),
       st: load('st', {}),          // { day: { 학생번호: {t, at} } } — 이 기기 + 서버에서 받은 상태
-      out: load('out', []),        // 보낼 줄 [{key, at, dev, n, nm, c, t, hold}]
+      out: load('out', []),        // 보낼 줄 [{key, at, dev, n, nm, c, t, hold}] — 서버가 ok·dup(시트에 있음)이라 할 때만 지움
+      drop: load('drop', []),      // 139: 서버가 안 쓰고 버린 줄 [{key, why, at}] 최근 100 — '오늘 기록'에 빨간 점
       net: { ok: null, lastOk: 0, lastErr: '', fails: 0, sending: false, lastMs: 0 },
       sent: 0,
     };
@@ -92,27 +93,34 @@
         if (!j || !j.ok) throw new Error(j && j.error || 'rec');
         var res = j.res || {}, fx = j.fix || {};
         go.forEach(function (r) { var t2 = fx[r.key]; if (!t2) return; r.t = t2; var m = S.st[kst(r.at).day]; if (m && m[r.n] && m[r.n].at === r.at) m[r.n].t = t2; save('st', S.st); }); // 2차: 서버가 다시 정한 등원/하원으로 고쳐 둠
-        go.forEach(function (r) { var v = res[r.key]; if (v === 'ok' || v === 'dup' || v === 'skip3' || v === 'bad') { r.result = v; done++; } });
+        go.forEach(function (r) { var v = res[r.key]; if (v === 'ok' || v === 'dup' || v === 'skip3' || v === 'bad') { r.result = v; done++; } if (v === 'skip3' || v === 'bad') { S.drop.push({ key: r.key, why: v, at: now() }); if (S.drop.length > 100) S.drop.shift(); } }); // 139: 버린 이유 남김(그 밖 retry·답 없음 = 그대로 남겨 다시 보냄)
         S.out = S.out.filter(function (r) { return !r.result; });
         S.sent += done; netOk(Date.now() - t0);
         if (o.onSent) try { o.onSent(go.filter(function (r) { return r.result; }), Date.now() - t0); } catch (e) {}
       } catch (e) { netErr(e); }
       go.forEach(function (r) { delete r.sending; });
-      S.net.sending = false; save('out', S.out); changed();
+      S.net.sending = false; save('out', S.out); save('drop', S.drop); changed();
       return done;
     }
     // 뒤에서 계속: 보낼 것 있으면 바로, 실패하면 1→2→4→8→15초 기다렸다 다시
-    var timer = null, stopped = false;
+    var timer = null, stopped = false, looping = false;
     function loop() {
-      if (stopped) return;
+      if (stopped) return; looping = true;
       var wait = 300;
       pumpOnce().then(function () {
         if (S.net.ok === false) wait = Math.min(15000, 1000 * Math.pow(2, Math.min(S.net.fails - 1, 4)));
         else if (S.out.some(function (r) { return r.hold <= now(); })) wait = 50;
-      }).catch(function () {}).then(function () { if (!stopped) timer = setTimeout(loop, wait); });
+      }).catch(function () {}).then(function () { looping = false; if (!stopped) timer = setTimeout(loop, wait); });
     }
+    // 139: 화면이 다시 켜짐·인터넷 돌아옴·터치 → 기다림(최대 15초) 버리고 바로 보냄
+    function kick() { if (stopped) return; S.net.fails = 0; if (S.net.ok === false) S.net.ok = null; if (looping) return; if (timer) clearTimeout(timer); loop(); }
+    // 139: 화면이 꺼지기 직전 — 남은 줄을 한 번 던져 둠(답은 못 받음 → 다시 켜지면 보통처럼 보내고 서버가 dup으로 확인, 그때 지움)
+    function beacon(send) { if (!S.out.length || typeof send !== 'function') return false; var b = base(); b.op = 'rec'; b.recs = S.out.slice(0, 50).map(function (r) { var x = { key: r.key, at: r.at, dev: r.dev, n: r.n, nm: r.nm, c: r.c, t: r.t }; if (r.st) x.st = 1; return x; }); try { return !!send(JSON.stringify(b)); } catch (e) { return false; } }
+    function state(key) { for (var i = 0; i < S.out.length; i++) if (S.out[i].key === key) return 'wait'; for (var j = S.drop.length - 1; j >= 0; j--) if (S.drop[j].key === key) return 'drop:' + S.drop[j].why; return 'sent'; }
+    function oldest() { var t = 0; S.out.forEach(function (r) { if (!t || r.at < t) t = r.at; }); return t; }
     return {
       S: S, lookup: lookup, decide: decide, commit: commit, cancel: cancel, syncRoster: syncRoster, pumpOnce: pumpOnce, merge: merge,
+      kick: kick, beacon: beacon, state: state, oldest: oldest,
       start: function () { stopped = false; loop(); }, stop: function () { stopped = true; if (timer) clearTimeout(timer); },
       pending: function () { return S.out.length; }, kst: kst, count: function () { return (S.roster.list || []).length; }, staffCount: function () { return (S.roster.staff || []).length; },
     };

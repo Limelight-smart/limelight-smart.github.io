@@ -55,6 +55,7 @@ body::after{content:"";position:fixed;inset:0;border:.8vh solid var(--lime);poin
 .res .nm{font-size:min(8vh,6vw);font-weight:800;line-height:1.1;word-break:keep-all}
 .res .kind{display:inline-block;margin-top:2vh;font-size:min(5.4vh,4vw);font-weight:800;padding:.6vh 3vh;border-radius:999px;background:var(--ok);color:#fff}
 .res .kind.out{background:var(--pu)}
+.res .kind.sv{background:#9aa3ad}
 .res.stf .nm{color:#1f6b3f}
 .pick button.stf{background:#dff2e4}
 .res .tm{font-size:min(4vh,3vw);color:var(--m);font-weight:700;margin-top:1.4vh;font-variant-numeric:tabular-nums}
@@ -103,6 +104,9 @@ body.is-test .test{display:block}
 .lg{background:var(--bg)}.lg .go:disabled{opacity:.5}
 .bar .lo{pointer-events:auto;border:0;background:transparent;color:var(--m);font-size:13px;text-decoration:underline;padding:4px 2px;display:none}
 body:not(.has-lt) #bLo{display:none}
+.tl .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;background:#43a047}.tl .d.w{background:#f9a825}.tl .d.x{background:#c62828}
+.lob{display:none;margin-top:12px;padding:12px;border-radius:12px;background:#f3f5f2;text-align:center;font-size:15px;font-weight:700;color:#1e2a38}.lob.on{display:block}
+.lob .bt{display:flex;gap:8px;margin-top:10px}.lob button{flex:1;height:42px;border:0;border-radius:10px;font-size:15px;font-weight:700;background:#e3e6ea;color:#1e2a38}.lob button.y{background:var(--lime)}
 @media (orientation:portrait){
 .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
 #tlb{display:none!important}
@@ -142,6 +146,7 @@ body:not(.has-lt) #bLo{display:none}
   <div class="row"><input type="checkbox" id="sTest"><label for="sTest" style="margin:0">시험 모드(예시 명부 · 시험 탭에만 기록)</label></div>
   <label>서버 주소</label><input type="text" id="sApi" autocomplete="off">
   <div class="info" style="margin:12px 0 0"><div id="sInfo"></div><span id="sRos"></span> · <button type="button" id="sRe" style="border:0;background:transparent;color:#6b7480;text-decoration:underline;font-size:13px">명부 다시 받기</button> · <button type="button" id="bLo" style="border:0;background:transparent;color:#6b7480;text-decoration:underline;font-size:13px">로그아웃</button></div>
+  <div class="lob" id="sLo"><div id="sLoT">로그아웃할까요?</div><div class="bt" id="sLoB"><button type="button" class="y" id="sLoY">로그아웃</button><button type="button" id="sLoN">취소</button></div></div>
   <button class="go" id="sGo">저장하고 시작</button>
   <div class="err" id="sErr"></div>
   <div class="info">설정 다시 열기: 시계를 3초 누르기</div>
@@ -151,7 +156,7 @@ body:not(.has-lt) #bLo{display:none}
 (function(){var d=document,e=d.documentElement;function go(){try{if(d.fullscreenElement||!e.requestFullscreen)return;var r=e.requestFullscreen({navigationUI:"hide"});if(r&&r.catch)r.catch(function(){});}catch(x){}}
 d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})();
 </script>
-<script src="core.js?v=1105b"></script>
+<script src="core.js?v=1105c"></script>
 <script>
 (function () {
   'use strict';
@@ -196,9 +201,11 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function tlSave() { try { LS.set(TLK(), JSON.stringify(TL.slice(-200))); } catch (e) {} }
   function tlAdd(r) { tlSync(); TL.push({ key: r.key, at: r.at, nm: r.nm, t: r.t, st: r.st ? 1 : 0 }); tlSave(); tlDraw(); }
   function tlDel(key) { TL = TL.filter(function (x) { return x.key !== key; }); tlSave(); tlDraw(); }
+  // 139: 보냄(초록)·보내는 중(노랑)·서버가 안 씀(빨강) 작은 점
+  function tlDot(key) { if (!K) return ''; var v = K.state(key); return v === 'wait' ? '<i class="d w" title="보내는 중"></i>' : v.indexOf('drop') === 0 ? '<i class="d x" title="서버가 안 씀(' + esc(v.slice(5)) + ')"></i>' : '<i class="d" title="보냄"></i>'; }
   function tlMore() { var c = $('tlc'); $('tlm').classList.toggle('on', c.scrollHeight - c.clientHeight - c.scrollTop > 6); }
   function tlDraw() {
-    var h = TL.slice().reverse().map(function (x) { var out = x.t === '하원' || x.t === '퇴근'; return '<li><div class="tm">' + KioskCore.kst(x.at).hms + '</div><div class="bb"><span class="n">' + esc(x.nm) + (x.st ? ' 선생님' : '') + '</span><span class="ch' + (out ? ' out' : '') + '">' + esc(x.t) + '</span></div></li>'; }).join('');
+    var h = TL.slice().reverse().map(function (x) { var out = x.t === '하원' || x.t === '퇴근'; return '<li><div class="tm">' + KioskCore.kst(x.at).hms + '</div><div class="bb"><span class="n">' + esc(x.nm) + (x.st ? ' 선생님' : '') + '</span><span class="ch' + (out ? ' out' : '') + '">' + esc(x.t) + '</span>' + tlDot(x.key) + '</div></li>'; }).join('');
     $('tlo').innerHTML = h || '<li class="emp">오늘 기록이 없어요</li>'; $('tlb').textContent = '오늘 기록 ' + TL.length; tlMore();
   }
   var popT = null;
@@ -212,9 +219,9 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   $('tlc').addEventListener('scroll', function () { tlMore(); if (popOpen()) popTouch(); });
   function bar() {
     if (!K) return;
-    var n = K.S.net, p = K.pending(), bad = n.ok === false; // 킴쌤 11/5 02:41 '보낼 줄 n'은 안 보임 — 연결 끊김일 때만
+    var n = K.S.net, p = K.pending(), old = p && now() - K.oldest() > 30000, bad = n.ok === false || old; // 킴쌤 11/5 02:41 '보낼 줄 n'은 안 보임 — 연결 끊김·30초 넘게 못 보냄일 때만(139)
     $('bar').style.display = bad ? 'flex' : 'none';
-    $('bNet').textContent = '연결 끊김';
+    $('bNet').textContent = n.ok === false ? '연결 끊김' + (p ? ' · 못 보낸 기록 ' + p : '') : '못 보낸 기록 ' + p + ' · 보내는 중';
 
     if ($('sRos')) { $('sRos').textContent = '명부 ' + K.count() + '명' + (K.staffCount() ? ' · 직원 ' + K.staffCount() + '명' : ''); $('sInfo').textContent = '기기 ' + (cfg.dev || '?') + ' · 보낼 줄 ' + p + ' · ' + (n.ok === true ? '연결됨' : n.ok === false ? '연결 끊김' : '연결 확인 중'); }
   }
@@ -229,6 +236,8 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
       var out = view.t === '하원' || view.t === '퇴근';
       h = '<div class="res' + (view.s.st ? ' stf' : '') + '"><div class="res1"><span class="kind' + (out ? ' out' : '') + '">' + view.t + ' ✓</span><span class="nm">' + esc(view.s.nm) + (view.s.st ? ' 선생님' : '') + '</span></div>'
         + '</div>'; // 킴쌤 02:30 취소 필요 없음 · 02:36 '등원 ✓' 위 · 이름 아래 두 줄
+    } else if (view.kind === 'saving') { // 139: 같은 자리, 회색 알약 '저장 중…'
+      h = '<div class="res' + (view.s.st ? ' stf' : '') + '"><div class="res1"><span class="kind sv">저장 중…</span><span class="nm">' + esc(view.s.nm) + (view.s.st ? ' 선생님' : '') + '</span></div></div>';
     } else if (view.kind === 'ign') {
       h = '<div class="res warn"><div class="nm">' + esc(view.s.nm) + '</div><div class="msg">방금 ' + view.last.t + ' 처리됐어요 (' + KioskCore.kst(view.last.at).hm + ')</div></div>';
     } else if (view.kind === 'none') {
@@ -242,7 +251,14 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function choose(s) {
     var t0 = performance.now(), r = K.commit(s);
     if (r.ignored) { view = { kind: 'ign', s: s, last: r.last }; beep('x'); back(2500); }
-    else { var hd = s.st ? 2000 : KioskCore.HOLD; view = { kind: 'done', s: s, t: r.t, hm: r.hm, key: r.rec.key, until: Date.now() + hd, left: hd / 1000 }; beep(r.t === '하원' || r.t === '퇴근' ? 'out' : 'in'); back(hd); }
+    else { // 139 킴쌤 16:29: 서버가 '적었다'고 할 때까지 '저장 중…'(숫자판 잠금), 3초 넘으면 풀고 보낼 줄에 남겨 계속 다시 보냄
+      clearTimeout(resetT); view = { kind: 'saving', s: s, t: r.t, hm: r.hm, key: r.rec.key, rec: r.rec, since: Date.now() }; K.kick();
+      var w = setInterval(function () {
+        if (view.kind !== 'saving' || view.key !== r.rec.key) { clearInterval(w); return; }
+        var st = K.state(r.rec.key); if (st === 'wait' && Date.now() - view.since < 3000) return;
+        clearInterval(w); var hd = s.st ? 2000 : KioskCore.HOLD; view = { kind: 'done', s: s, t: r.rec.t, hm: r.hm, key: r.rec.key, wait: st === 'wait' }; beep(r.rec.t === '하원' || r.rec.t === '퇴근' ? 'out' : 'in'); back(hd); draw();
+      }, 80);
+    }
     draw();
     if (r.rec) tlAdd(r.rec);
     window.__kiosk.log.push({ ms: performance.now() - t0, n: s.n, t: r.ignored ? 'ign' : r.t, key: r.rec ? r.rec.key : '' });
@@ -257,7 +273,7 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function key(k) {
     if (!K) return;
     if (popOpen()) return; // 팝업이 떠 있는 동안 숫자 입력 막음
-    if (view.kind === 'pick') return;
+    if (view.kind === 'pick' || view.kind === 'saving') return; // 139: 저장 중엔 숫자·입력 무시(두 번 입력 막음)
     if (view.kind !== 'idle') { clearTimeout(resetT); view = { kind: 'idle' }; buf = ''; }
     clearTimeout(idleT);
     if (k === 'C') buf = ''; else if (k === 'B') buf = buf.slice(0, -1);
@@ -293,7 +309,8 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   $('sGo').addEventListener('click', function () {
     var on = $('sDev').querySelector('.on'); if (!on) { $('sErr').textContent = '기기 번호를 골라 주세요'; return; }
     var test = $('sTest').checked, k = $('sKey').value.trim(); if (!test && !k) { $('sErr').textContent = '기기 열쇠를 넣어 주세요'; return; }
-    cfg = { dev: on.dataset.d, key: k, test: test, api: $('sApi').value.trim() || FAST }; LS.set('kiosk_cfg', JSON.stringify(cfg)); location.replace(location.pathname);
+    var nc = { dev: on.dataset.d, key: k, test: test, api: $('sApi').value.trim() || FAST };
+    afterSent($('sErr'), function () { cfg = nc; LS.set('kiosk_cfg', JSON.stringify(cfg)); location.replace(location.pathname); }); // 139: 보낼 줄 다 보낸 뒤에만
   });
   function post(body) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
@@ -320,7 +337,16 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   }
   $('lGo').addEventListener('click', doLogin);
   $('lPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
-  $('bLo').addEventListener('click', function () { if (!confirm('로그아웃할까요?')) return; dropLt(); showLogin(''); });
+  // 139: 로그아웃·설정 바꾸기 — 못 보낸 기록이 있으면 먼저 다 보내고 나서(기록이 사라지지 않게). 기기 번호·오늘 기록은 남김
+  var loWait = null;
+  function afterSent(msgEl, done) {
+    clearInterval(loWait);
+    var step = function () { var p = K ? K.pending() : 0; if (!p) { clearInterval(loWait); loWait = null; done(); return true; } msgEl.textContent = '아직 못 보낸 기록 ' + p + '개 — 먼저 보내는 중'; K.kick(); return false; };
+    if (!step()) loWait = setInterval(step, 1000);
+  }
+  $('bLo').addEventListener('click', function () { clearInterval(loWait); loWait = null; $('sLoT').textContent = '로그아웃할까요?'; $('sLoB').style.display = 'flex'; $('sLo').classList.add('on'); });
+  $('sLoN').addEventListener('click', function () { clearInterval(loWait); loWait = null; $('sLo').classList.remove('on'); });
+  $('sLoY').addEventListener('click', function () { $('sLoB').style.display = 'none'; afterSent($('sLoT'), function () { $('sLo').classList.remove('on'); dropLt(); showLogin(''); }); });
   // 처음 열 때: 살아 있는 토큰이 있으면 바로 키패드(서버 확인은 뒤에서), 없으면 서버에 로그인이 필요한지 묻고 기다림
   function auth() { return post({ a: 'kiosk', op: 'auth', lt: ltNow() }).then(function (j) { if (!j || !j.ok) throw new Error('auth'); if (j.known) LS.set('kiosk_lon', j.on || j.must ? '1' : '0'); return j; }); }
   function judge(j) { if (j.on && !j.valid) { dropLt(); showLogin(''); return false; } if (!j.on && j.must) { showLogin('', true); return false; } return true; }
@@ -334,12 +360,18 @@ d.addEventListener("pointerdown",go,true);d.addEventListener("click",go,true);})
   function start() {
     if (K) return;
     if (!cfg.dev || (!cfg.test && !cfg.key)) { draw(); openSet(); return; }
-    K = KioskCore.create({ post: post, store: LS, now: now, dev: cfg.dev, key: cfg.key, lt: ltNow, test: !!cfg.test, onChange: bar, onLogin: function () { if ($('lg').classList.contains('on')) return; dropLt(); showLogin('다시 로그인해 주세요'); } });
+    K = KioskCore.create({ post: post, store: LS, now: now, dev: cfg.dev, key: cfg.key, lt: ltNow, test: !!cfg.test, hold: 0, onChange: function () { bar(); if (popOpen()) tlDraw(); }, onLogin: function () { if ($('lg').classList.contains('on')) return; dropLt(); showLogin('다시 로그인해 주세요'); } }); // 139: hold 0 = 취소 버튼이 없어져 기다림 없이 바로 보냄(저장 중 잠금)
     draw();
     var first = function () { K.syncRoster().then(function (ok) { draw(); if (!ok && !K.count()) setTimeout(first, 3000); }); };
     first();
     setInterval(function () { K.syncRoster(); }, cfg.test ? 10000 : 20000); // 다른 태블릿이 찍은 그날 상태 + 명부 바뀜(같으면 목록은 안 옴)
     K.start();
+    // 139: 화면이 꺼졌다 켜지면 타이머가 멈춰 있던 동안의 기다림을 버리고 바로 보냄 · 꺼지기 직전엔 남은 줄을 한 번 던져 둠
+    var beam = function () { if (!navigator.sendBeacon || !K.pending()) return; K.beacon(function (txt) { return navigator.sendBeacon(cfg.api || FAST, new Blob([txt], { type: 'text/plain;charset=UTF-8' })); }); };
+    document.addEventListener('visibilitychange', function () { if (document.hidden) beam(); else K.kick(); });
+    window.addEventListener('pagehide', beam);
+    ['online', 'pageshow', 'focus'].forEach(function (ev) { window.addEventListener(ev, function () { K.kick(); }); });
+    document.addEventListener('pointerdown', function () { if (K.pending()) K.kick(); }, true);
     // 133: 켜 둔 태블릿이 옛 화면으로 계속 도는 것 막기 — 10분마다 새 화면(core.js?v=)을 보고, 바뀌었으면 쉬는 때(입력·팝업·보낼 줄 없음) 다시 열기
     var myV = ((document.querySelector('script[src^="core.js"]') || {}).src || '').split('v=')[1] || '', newV = '';
     setInterval(function () {
