@@ -47,8 +47,7 @@ function draw(r){
   var pl=P.plan||{};
   if((pl.rows||[]).length)h+='<section class="plan">'+pl.rows.map(function(x){return '<div class="pr'+(x.done?' dn':'')+'"><em>'+E(x.wk)+'</em><span>'+E(x.span)+'</span><b>'+E(x.u)+'</b>'+(x.done?'<i>완료</i>':'')+'</div>'}).join("")+
     '<div class="sch">'+(pl.sch||[]).map(function(s){return '<div><span>'+E(s.k)+'</span><b>'+E(s.v)+'</b></div>'}).join("")+'</div></section>';
-  var fc=(P.focus||[]).map(function(x){return '<span>'+E(x.code)+' '+E(x.name)+' ('+E((x.lvs||[]).join("·"))+')</span>'}).join("");
-  h+='<section class="fix"><h2>보완할 부분</h2><div class="chips">'+(fc||'<span>이번 주 범위에서 보완할 유형이 없어요.</span>')+'</div><p>'+E(pl.how)+'</p></section>';
+  /* 11/17 15:51 킴쌤: '보완할 부분' 상자 뺌 */
   h+='<div class="call">궁금하신 점은 라임라잇 스마트관으로 편하게 연락 주세요.</div>';
   app.innerHTML='<div class="wrap">'+h+'</div>'}
 var m=/[?&]k=([A-Za-z0-9]{32,64})\b/.exec(location.search),k=m&&m[1];
