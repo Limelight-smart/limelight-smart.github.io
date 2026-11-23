@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         매쓰홀릭 → 내신로그 자동 업데이트
 // @namespace    naesin-kyomusil-2026
-// @version      2.13.2
-// @description  (2.13.2 11/23: 매쓰홀릭 접속 열쇠(330초) 만료 전 미리 갱신 · 401/403이면 한 번 갱신 뒤 재시도 / 2.13.1 11/23: 수업 시간 수집 창 변경 — 평일 18~22시 · 토 10~13시+14~20시(13~14시 쉼) · 일 10~13시 / 2.13.0 11/23: 열쇠(TOKEN·ACH_KEY)는 코드에 없음 — 크롬 localStorage 'naesinToken'·'naesinAchKey'에서 읽음(없으면 조용히 멈춤, 콘솔 '열쇠 없음'), 자동 업데이트 주소 = 공개 저장소, 보내는 자료에 버전(v)·PC 이름(pc = localStorage 'naesinPc')·실행 번호(run) · 소단원은 3천 줄씩 나눠 보냄(빠른 서버 본문 2MB 한도 — 그동안 빠른 서버가 0건이던 까닭) · 실패하면 까닭(busy·login·network·other)을, 끝나면 보낸 숫자(소단원 줄·수업별 학생·학습지·줄)를 빠른 서버 a=mhPing으로(서버가 쓴 숫자와 대조·계산 기억 지움) / 2.12.0 11/22: 소단원·학습 보내는 곳 = 빠른 서버(DB에 먼저 쌓고 시트에도 같이 씀) — 빠른 서버가 안 되면 옛 서버 주소로 한 번 더(같은 열쇠 덮어쓰기라 두 번 가도 같음) / 2.11.3 11/21: '[내신대비]'로 시작하는 수업도 내신 수업으로 수집 / 2.11.2 11/17: AI 예측 초록 문항 수를 소단원 줄 맨 끝(예측초록)에 따로 보냄 — 서버가 유형분석 초록 합계에 더함 / 2.11.1 11/17: 소단원 열쇠에 대단원 추가(1-1 3.2.x와 1-2 3.2.x가 같은 코드라 서로 덮던 것) / 2.11.0 11/17: '[기말대비]'·'[중간대비]' 수업도 내신 수업으로 읽음(소단원 범위 거르지 않음) · 6단계(실력 하·중, 심화 하·중 — 매쓰홀릭 tag 9) 소단원 줄('내신실력하'~'내신심화중') + 중단원 이름 · 새로 '학습' 탭(학습지별 처음 푼 결과·다시풀기·오답유사)을 수업마다 a=achLearn으로 · 옛 내신로그 주소가 없어도 새 전송만으로 돎 / 2.10.2 11/12: [기말내신] 수업 소단원별을 난이도별(교재 '내신개념'·'내신기본'·'내신실력'·'내신심화')로도 보냄(합친 '내신' 줄은 그대로), 학교 하나만 든 수업 이름이면 학교 칸 채움, 옛 내신로그 실패·[교과서] 수업 없음이어도 소단원별은 따로 보냄 / 2.10.1 11/10: 매쓰홀릭 '[기말내신] 학교' 수업(내신대비 교재 — 학생은 원래 반 + 추가)도 읽어 소단원별을 교재 '내신'으로 같이 보냄(개념~심화 합침), 옛 내신로그는 그대로 / 2.10.0 11/10: 소단원별 성취도 — 이미 받는 유형분석을 소단원×교재(교과서·개념·기본·실력·심화)×6색·완료·이해율·AI 예측으로 묶어 선생님앱_API a=achSub에도 보냄. 옛 내신로그 전송은 그대로, 매쓰홀릭 호출 수 그대로) 수업 시간(평일 18~22:30 · 토 10~22 · 일 10~18) 15분마다 + 매일 14:00·22:00 + 시트 버튼 요청. 화면 버튼 없음(집 PC 상시 실행용). (2.9.2: 15분·평일 22:30까지 / 2.9.1: 학원 PC 설치본 2.8의 이사벨 동아·내성 3.2 제외 합침 / 2.9: 요일별 시간 창·버튼 숨김 / 2.8.1: 금양중 범위에서 원부채꼴 제외 / 2.8: 로그인 정보 자동 갱신·재시도, 집중 모드 / 2.7: AI 예측은 회색 / 2.4: 인쇄 시 숨김)
+// @version      2.13.3
+// @description  (2.13.3 11/23: 탭 멈춤 막기 — 숨은 창(로그인 갱신)은 한 번에 하나·실패 뒤 1분은 다시 안 엶·열쇠가 20초 넘게 남았으면 안 엶 · 매쓰홀릭 요청 30초·보내기 60초 시간 제한(걸려도 '실행 중'으로 영원히 남지 않음) · 로그인 화면이면 숨은 창 없이 바로 멈추고 mhPing fail login · 10분 지난 잠금은 지움 · 학생마다 잠깐 양보 / 2.13.2 11/23: 매쓰홀릭 접속 열쇠(330초) 만료 전 미리 갱신 · 401/403이면 한 번 갱신 뒤 재시도 / 2.13.1 11/23: 수업 시간 수집 창 변경 — 평일 18~22시 · 토 10~13시+14~20시(13~14시 쉼) · 일 10~13시 / 2.13.0 11/23: 열쇠(TOKEN·ACH_KEY)는 코드에 없음 — 크롬 localStorage 'naesinToken'·'naesinAchKey'에서 읽음(없으면 조용히 멈춤, 콘솔 '열쇠 없음'), 자동 업데이트 주소 = 공개 저장소, 보내는 자료에 버전(v)·PC 이름(pc = localStorage 'naesinPc')·실행 번호(run) · 소단원은 3천 줄씩 나눠 보냄(빠른 서버 본문 2MB 한도 — 그동안 빠른 서버가 0건이던 까닭) · 실패하면 까닭(busy·login·network·other)을, 끝나면 보낸 숫자(소단원 줄·수업별 학생·학습지·줄)를 빠른 서버 a=mhPing으로(서버가 쓴 숫자와 대조·계산 기억 지움) / 2.12.0 11/22: 소단원·학습 보내는 곳 = 빠른 서버(DB에 먼저 쌓고 시트에도 같이 씀) — 빠른 서버가 안 되면 옛 서버 주소로 한 번 더(같은 열쇠 덮어쓰기라 두 번 가도 같음) / 2.11.3 11/21: '[내신대비]'로 시작하는 수업도 내신 수업으로 수집 / 2.11.2 11/17: AI 예측 초록 문항 수를 소단원 줄 맨 끝(예측초록)에 따로 보냄 — 서버가 유형분석 초록 합계에 더함 / 2.11.1 11/17: 소단원 열쇠에 대단원 추가(1-1 3.2.x와 1-2 3.2.x가 같은 코드라 서로 덮던 것) / 2.11.0 11/17: '[기말대비]'·'[중간대비]' 수업도 내신 수업으로 읽음(소단원 범위 거르지 않음) · 6단계(실력 하·중, 심화 하·중 — 매쓰홀릭 tag 9) 소단원 줄('내신실력하'~'내신심화중') + 중단원 이름 · 새로 '학습' 탭(학습지별 처음 푼 결과·다시풀기·오답유사)을 수업마다 a=achLearn으로 · 옛 내신로그 주소가 없어도 새 전송만으로 돎 / 2.10.2 11/12: [기말내신] 수업 소단원별을 난이도별(교재 '내신개념'·'내신기본'·'내신실력'·'내신심화')로도 보냄(합친 '내신' 줄은 그대로), 학교 하나만 든 수업 이름이면 학교 칸 채움, 옛 내신로그 실패·[교과서] 수업 없음이어도 소단원별은 따로 보냄 / 2.10.1 11/10: 매쓰홀릭 '[기말내신] 학교' 수업(내신대비 교재 — 학생은 원래 반 + 추가)도 읽어 소단원별을 교재 '내신'으로 같이 보냄(개념~심화 합침), 옛 내신로그는 그대로 / 2.10.0 11/10: 소단원별 성취도 — 이미 받는 유형분석을 소단원×교재(교과서·개념·기본·실력·심화)×6색·완료·이해율·AI 예측으로 묶어 선생님앱_API a=achSub에도 보냄. 옛 내신로그 전송은 그대로, 매쓰홀릭 호출 수 그대로) 수업 시간(평일 18~22:30 · 토 10~22 · 일 10~18) 15분마다 + 매일 14:00·22:00 + 시트 버튼 요청. 화면 버튼 없음(집 PC 상시 실행용). (2.9.2: 15분·평일 22:30까지 / 2.9.1: 학원 PC 설치본 2.8의 이사벨 동아·내성 3.2 제외 합침 / 2.9: 요일별 시간 창·버튼 숨김 / 2.8.1: 금양중 범위에서 원부채꼴 제외 / 2.8: 로그인 정보 자동 갱신·재시도, 집중 모드 / 2.7: AI 예측은 회색 / 2.4: 인쇄 시 숨김)
 // @match        https://teacher.matholic.com/*
 // @run-at       document-start
 // @grant        none
@@ -50,7 +50,7 @@
     if (e.origin === location.origin && e.data && e.data.naesinAuth) { AUTH = e.data.naesinAuth; authAt = Date.now(); if (e.data.api) API = e.data.api; }
   });
 
-  const VER = '2.13.2';
+  const VER = '2.13.3';
   // 2.13.0: 열쇠는 localStorage에서만(코드·공개 저장소에 없음)
   const TOKEN = (ls.get('naesinToken') || '').trim();
   const PC = (ls.get('naesinPc') || '').trim().slice(0, 30);
@@ -165,10 +165,10 @@
   const JWT_RE = /eyJ[\w-]+\.[\w-]+\.[\w-]+/;
   const jwtExp = t => { try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp || 0; } catch (e) { return 0; } };
   const curJwt = () => { for (const v of Object.values(AUTH || {})) { const m = String(v).match(JWT_RE); if (m) return m[0]; } return null; };
-  function authFresh() {
+  function authFresh(margin = 2 * 60000) {   // 2.13.3 여유를 고를 수 있게 — 요청 직전엔 20초(2분이면 330초 열쇠의 마지막 2분 동안 요청마다 숨은 창이 열려 탭이 멈춤)
     if (!AUTH) return false;
     const j = curJwt(), e = j ? jwtExp(j) : 0;
-    if (e) return e * 1000 > Date.now() + 2 * 60000;          // 토큰 만료 시각을 직접 확인 (2분 여유)
+    if (e) return e * 1000 > Date.now() + margin;          // 토큰 만료 시각을 직접 확인
     return Date.now() - authAt < 15 * 60000;                   // 만료 시각을 모르면 15분 기준
   }
   // 사이트가 브라우저 저장소에 갱신해 둔 토큰이 있으면 그걸로 바꿔 끼움
@@ -184,7 +184,17 @@
     return true;
   }
   // 보이지 않는 창으로 매쓰홀릭을 한 번 열어 새 로그인 헤더를 받아옴 (화면 새로고침 없이)
+  // 2.13.3 로그인 화면(비밀번호 칸·login 주소)이면 숨은 창을 열어도 소용없음 — 바로 멈춤
+  const isLoginScreen = () => { try { return /login|signin|sign-in/i.test(location.pathname) || !!document.querySelector('input[type=password]'); } catch (e) { return false; } };
+  // 2.13.3 숨은 창은 한 번에 하나, 실패하면 1분 동안 다시 안 엶(같은 탭 안에서 매쓰홀릭 앱 전체를 거듭 띄워 탭이 멈추던 것)
+  let frameP = null, frameFailAt = 0;
   function frameAuth() {
+    if (frameP) return frameP;
+    if (isLoginScreen() || Date.now() - frameFailAt < 60000) return Promise.resolve(false);
+    frameP = frameAuth0().then(ok => { if (!ok) frameFailAt = Date.now(); frameP = null; return ok; });
+    return frameP;
+  }
+  function frameAuth0() {
     return new Promise(res => {
       if (!document.body) return res(false);
       const t0 = authAt, f = document.createElement('iframe');
@@ -192,7 +202,7 @@
       f.src = location.origin + '/';
       let n = 0, iv;
       const fin = ok => { clearInterval(iv); try { f.remove(); } catch (e) {} res(ok); };
-      iv = setInterval(() => { if (authAt > t0 && authFresh()) fin(true); else if (++n > 50) fin(false); }, 500);
+      iv = setInterval(() => { if (authAt > t0 && authFresh(20000)) fin(true); else if (++n > 50) fin(false); }, 500);
       document.body.appendChild(f);
     });
   }
@@ -205,7 +215,7 @@
   // ── 직접 요청 ──────────────────────────────────────────────
   // 2.13.0: 매쓰홀릭 접속 토큰 수명 330초 — 수집(수 분) 도중 만료돼 401로 통째로 멈추던 것 → 요청 전 낡았으면 갱신, 401·403이면 갱신 뒤 한 번 더
   const req = async (method, url, body, extra) => {
-    if (!authFresh()) await ensureAuth(true);
+    if (!authFresh(20000)) await ensureAuth(true);   // 2.13.3 20초 넘게 남았으면 그대로 씀
     try { return await req0(method, url, body, extra); }
     catch (e) { if ((e === 401 || e === 403) && await ensureAuth(true)) return await req0(method, url, body, extra); throw e; }
   };
@@ -216,8 +226,11 @@
     for (const [k, v] of Object.entries({ ...(AUTH || {}), ...(extra || {}) })) XH.call(x, k, v);
     x.onload = () => x.status < 300 ? ok(JSON.parse(x.responseText)) : no(x.status);
     x.onerror = () => no('network');
+    x.timeout = 30000; x.ontimeout = () => no('timeout');   // 2.13.3 걸린 요청이 수집을 영원히 '실행 중'으로 묶지 않게
     XS.call(x, body ?? null);
   });
+  // 2.13.3 보내기(빠른 서버·옛 서버) 시간 제한 — 안 끝나면 끊고 다음 칸에서 다시
+  const fetchT = (u, o, ms = 60000) => { const c = new AbortController(), t = setTimeout(() => c.abort(), ms); return fetch(u, Object.assign({}, o || {}, { signal: c.signal })).finally(() => clearTimeout(t)); };
   const FORM = { 'Content-Type': 'application/x-www-form-urlencoded' }, JSONH = { 'Content-Type': 'application/json' };
   const isAuthErr = e => e === 401 || e === 403;
 
@@ -260,6 +273,7 @@
         for (const [i, st] of students.entries()) {
           const name = (st.fullName || st.name || '').replace(/^BXe/, '').trim();
           onStatus && onStatus(`${c.title} ${i + 1}/${students.length} ${name}`);
+          ls.set(LS.lock, String(Date.now())); await sleep(0);   // 2.13.3 잠금 살아 있음 표시 + 화면에 양보
           const chapters = []; let stErr = 0;
           for (const ch of (c.rootChapterIds?.length ? c.rootChapterIds : CHAPTERS)) {
             const body = `unitGroupLevels=-1%2C1%2C2%2C3&nonPassFilters=UNITGROUP_STATEMENT&studentId=${st.id}&courseId=${c.id}`;
@@ -296,6 +310,7 @@
         for (const [i, st] of students.entries()) {
           const name = (st.fullName || st.name || '').replace(/^BXe/, '').trim();
           onStatus && onStatus(`${title} ${i + 1}/${students.length} ${name}`);
+          ls.set(LS.lock, String(Date.now())); await sleep(0);
           const chapters = []; let stErr = 0;
           for (const ch of (c.rootChapterIds?.length ? c.rootChapterIds : CHAPTERS)) {
             const body = `unitGroupLevels=-1%2C1%2C2%2C3&nonPassFilters=UNITGROUP_STATEMENT&studentId=${st.id}&courseId=${c.id}`;
@@ -332,10 +347,10 @@
       const payload = JSON.stringify({ token: TOKEN, log: logRows, anal: analRows, mode, reqId, v: VER, pc: PC });
       let res;
       try {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload });
+        const r = await fetchT(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload });
         res = await r.json();
       } catch (e) {
-        await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload });
+        await fetchT(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload });
         res = { ok: true, added: '?', updated: '?' };
       }
       if (!res.ok) { const s0 = await sendNew(rows, today, naeSub, learns); return { ok: false, msg: '시트 오류: ' + res.error + ' · ' + s0.msg }; }   // 2.10.2: 옛 길이 실패해도 소단원별은 보냄
@@ -355,15 +370,15 @@
   let RUN = '';   // 2.13.0 한 번 실행 = 한 번호(서버가 이 번호로 숫자를 모아 대조)
   async function ping(op, extra) {   // 2.13.0 빠른 서버에만(옛 서버는 모름) — 실패해도 조용히
     const fast = ls.get('naesinFastUrl') || FAST_URL; if (fast === 'off' || !hasAch()) return null;
-    try { return await (await fetch(fast, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ a: 'mhPing', op, k: ACH_KEY, v: VER, pc: PC, run: RUN }, extra || {})) })).json(); } catch (e) { return null; }
+    try { return await (await fetchT(fast, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ a: 'mhPing', op, k: ACH_KEY, v: VER, pc: PC, run: RUN }, extra || {})) }, 15000)).json(); } catch (e) { return null; }
   }
   const whyOf = r => r.busy ? 'busy' : r.auth ? 'login' : /fetch|network|Failed|연결|timeout/i.test(String(r.msg || '')) ? 'network' : 'other';
   async function postAch(body) {   // 2.11.0 achSub·achLearn 같은 주소·같은 열쇠 — 연결 오류면 2초 뒤 한 번 더 · 2.12.0 빠른 서버 먼저, 안 되면 옛 서버로 한 번 더
     const url = ls.get('naesinAchUrl') || ACH_URL, fast = ls.get('naesinFastUrl') || FAST_URL, opt = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) };
-    if (fast !== 'off') { let j = null; try { j = await (await fetch(fast, opt)).json(); } catch (e) { j = null; }
+    if (fast !== 'off') { let j = null; try { j = await (await fetchT(fast, opt)).json(); } catch (e) { j = null; }
       if (j && (j.ok || j.error === 'empty' || j.error === 'arg')) return j; }   // 빠른 서버 실패(연결·시트 거울 실패·열쇠 다름) = 아래 옛 길
-    try { return await (await fetch(url, opt)).json(); }
-    catch (e) { await sleep(2000); return await (await fetch(url, opt)).json(); }
+    try { return await (await fetchT(url, opt)).json(); }
+    catch (e) { await sleep(2000); return await (await fetchT(url, opt)).json(); }
   }
   async function sendSub(rows, today, extra) {
     if (!hasAch()) return '열쇠 없음(안 보냄)';
@@ -404,6 +419,7 @@
     if (isBusy()) { const r0 = { ok: false, msg: '이미 실행 중', busy: true }; ping('fail', { why: 'busy' }); return r0; }
     busy = true; RUN = String(Date.now());
     try {
+      if (!authFresh(20000) && isLoginScreen()) { ping('fail', { why: 'login' }); return { ok: false, msg: '로그인 화면 — 멈춤(다시 로그인 필요)', auth: true }; }   // 2.13.3
       onStatus && onStatus('🔑 로그인 확인 중…');
       if (!(await ensureAuth())) { ping('fail', { why: 'login' }); return { ok: false, msg: '로그인 정보를 갱신하지 못함 — 매쓰홀릭 로그인 상태를 확인하세요', auth: true, needReload: true }; }
       let r = await runUpdate(mode, onStatus, reqId);
@@ -502,7 +518,9 @@
 
   async function tick(now = new Date()) {
     if (isBusy()) return;
-    if (Date.now() - Number(ls.get(LS.lock) || 0) < 10 * 60000) return;   // 다른 탭에서 실행 중
+    const lk = Number(ls.get(LS.lock) || 0);
+    if (lk && Date.now() - lk < 10 * 60000) return;   // 다른 탭에서 실행 중(실행 중엔 학생마다 시각을 새로 적음)
+    if (lk) ls.del(LS.lock);   // 2.13.3 10분 넘게 안 고쳐진 잠금 = 멈춘 탭이 남긴 것 → 지움
     const k = dueSlot(now);
     if (k) return runSlot(k, now);
     const rk = rushDue(now);
@@ -515,7 +533,7 @@
     done[k] = { ...(done[k] || {}), tries: ((done[k] && done[k].tries) || 0) + 1 };
     ls.set(LS.done, JSON.stringify(done));
     // 2.8: 새로고침 없이 먼저 갱신해 보고, 안 될 때만(자리 비움일 때) 새로고침
-    if (!(await ensureAuth()) && ls.get(LS.pending) !== k && idle()) { ls.set(LS.pending, k); location.reload(); return; }
+    if (!isLoginScreen() && !(await ensureAuth()) && ls.get(LS.pending) !== k && idle()) { ls.set(LS.pending, k); location.reload(); return; }
     ls.del(LS.pending);
     const r = await runSafe('자동', setStatus);
     saveLast('자동', r);
@@ -529,6 +547,7 @@
   async function runRush(k) {
     ls.set(LS.rushDone, k);   // 한 칸당 1회. 실패해도 다음 칸에서 다시
     if (!URL_RE.test(ls.get(LS.url) || '') && !hasAch()) return;   // 2.11.0
+    if (!authFresh(20000) && isLoginScreen()) { ping('fail', { why: 'login' }); setStatus(`⏸ 집중 ${k.slice(11)} 건너뜀 — 로그인 화면 · ` + lastText()); return; }   // 2.13.3
     if (!(await ensureAuth())) { ping('fail', { why: 'login' }); setStatus(`⏸ 집중 ${k.slice(11)} 건너뜀 — 로그인 확인 안 됨 · ` + lastText()); return; }   // 로그아웃 상태면 조용히
     const r = await runSafe('집중', setStatus);
     saveLast('집중', r);
@@ -564,7 +583,7 @@
     const url = ls.get(LS.url);
     if (isBusy() || !URL_RE.test(url || '') || !hasTok()) return;
     let j;
-    try { j = await (await fetch(url + '?action=poll&token=' + TOKEN)).json(); } catch (e) { return; }
+    try { j = await (await fetchT(url + '?action=poll&token=' + TOKEN, {}, 20000)).json(); } catch (e) { return; }
     const reqId = Number(j && j.req || 0);
     if (!reqId || reqId <= Number(ls.get(LS.reqDone) || 0)) return;
     if (Date.now() - Number(ls.get(LS.lock) || 0) < 10 * 60000) return;   // 다른 탭이 처리 중
@@ -576,7 +595,7 @@
     notify(r.ok ? `✅ ${who} 선생님 요청 처리 완료` : `❌ ${who} 선생님 요청 처리 실패`, r.msg);
     setStatus(lastText());
     if (!r.ok) {
-      try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      try { await fetchT(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ token: TOKEN, reqId, statusOnly: '❌ 업데이트 실패 ' + stamp() + ' · ' + r.msg + ' — 매쓰홀릭을 새로고침한 뒤 다시 누르세요' }) }); } catch (e) {}
     }
   }
